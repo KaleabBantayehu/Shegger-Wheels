@@ -1,25 +1,20 @@
-import { plus_jakarta_sans } from "./ui/font.js";
 import "./globals.css";
-import Navbar from "../components/NavBar.jsx";
-import Footer from "@/components/Footer.jsx";
+import Navbar from "../components/NavBar";
+import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: 'Sheggar Wheels - Car Rental & Marketplace',
-  description: 'Rent, buy, and list vehicles seamlessly in Ethiopia.',
+  title: "Sheggar Wheels | Peer-to-Peer Car Rental in Addis Ababa",
+  description: "Rent unique cars from trusted local hosts in Addis Ababa",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html
-      lang="en"
-      className={`${plus_jakarta_sans.className}} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
+    <html lang="en">
+      <body className="bg-[#0b1320] text-gray-100 antialiased min-h-screen flex flex-col justify-between">
         <Navbar />
-        {children}
+        <main className="flex-grow">{children}</main>
         <Footer />
-        </body>
+      </body>
     </html>
   );
 }
-
