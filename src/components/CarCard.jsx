@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 export default function CarCard({ car }) {
   const rating = car.rating || 4.9;
@@ -109,7 +110,12 @@ export default function CarCard({ car }) {
         </div>
 
         <button className="bg-white hover:bg-gray-200 text-black font-bold text-xs px-4 py-2 rounded-xl transition shadow-xs">
-          {car.tags?.includes("Instant Book") ? "Book Trip" : "Request Trip"}
+            <Link
+                href={`/cars/${car.id}`}
+                className="bg-white hover:bg-gray-200 text-black font-bold text-xs px-4 py-2 rounded-xl transition text-center inline-block"
+                >
+                {car.tags?.includes("Instant Book") ? "Book Trip" : "Request Trip"}
+            </Link>
         </button>
       </div>
     </div>
