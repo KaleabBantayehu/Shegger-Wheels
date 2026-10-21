@@ -1,6 +1,7 @@
 import { plus_jakarta_sans } from "./ui/font.js";
 import "./globals.css";
 import Navbar from "../components/NavBar.jsx";
+import Footer from "@/components/Footer.jsx";
 
 export const metadata = {
   title: 'Sheggar Wheels - Car Rental & Marketplace',
@@ -15,7 +16,9 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col">
         <Navbar />
-        {children}</body>
+        {children}
+        <Footer />
+        </body>
     </html>
   );
 }
