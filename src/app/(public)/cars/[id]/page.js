@@ -1,0 +1,271 @@
+"use client";
+
+import { use, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { INITIAL_CARS } from "@/lib/seedData";
+
+export default function CarDetailPage({ params }) {
+  // Unwrap route params in Next.js App Router
+  const resolvedParams = use(params);
+  const car = INITIAL_CARS.find((c) => c.id === resolvedParams.id);
+
+  if (!car) {
+    notFound();
+  }
+
+  // Local booking state
+  const [startDate, setStartDate] = useState("2026-03-01");
+  const [endDate, setEndDate] = useState("2026-03-04");
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  // Calculate rental duration & price breakdown
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffTime = Math.max(end - start, 0);
+  const days = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 1);
+  
+  const subtotal = car.pricePerDay * days;
+  const serviceFee = Math.round(subtotal * 0.05); // 5% platform fee
+  const grandTotal = subtotal + serviceFee;
+
+  const handleBooking = (e) => {
+    e.preventDefault();
+    setBookingSuccess(true);
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      
+      {/* Breadcrumbs Navigation */}
+      <nav className="flex items-center gap-2 text-xs text-gray-400">
+        <Link href="/" className="hover:text-white transition">Home</Link>
+        <span>/</span>
+        <Link href="/cars" className="hover:text-white transition">Cars</Link>
+        <span>/</span>
+        <span className="text-gray-200 font-semibold">{car.make} {car.model}</span>
+      </nav>
+
+      {/* Title & Location Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+              {car.edition || "Verified Vehicle"}
+            </span>
+            <span className="text-xs text-gray-400">• {car.year}</span>
+          </div>
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-white">
+            {car.make} {car.model}
+          </h1>
+          <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+            📍 {car.neighbourhood}, {car.city}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <span className="text-xs text-gray-400 block">Rating & Reviews</span>
+            <span className="text-sm font-bold text-white">
+              ★ {car.rating || 4.9} <span className="text-xs text-gray-400">({car.reviewsCount || 12} reviews)</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Image Showcase */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[350px] md:h-[420px]">
+        <div className="md:col-span-2 relative rounded-2xl overflow-hidden border border-gray-800 bg-gray-900">
+          <Image
+            src={car.photos[0]}
+            alt={`${car.make} ${car.model}`}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+        <div className="hidden md:flex flex-col gap-4">
+          <div className="relative h-1/2 rounded-2xl overflow-hidden border border-gray-800 bg-gray-900">
+            <Image
+              src={car.photos[0]}
+              alt={`${car.make} ${car.model} interior`}
+              fill
+              className="object-cover brightness-90 hover:brightness-100 transition"
+            />
+          </div>
+          <div className="relative h-1/2 rounded-2xl overflow-hidden border border-gray-800 bg-gray-900 flex items-center justify-center text-xs font-bold text-gray-300">
+            <span>+ Photo Gallery</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Layout: Left Details, Right Booking Widget */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        {/* Left Column: Vehicle Specs & Host Info */}
+        <div className="lg:col-span-7 space-y-8">
+          
+          {/* Key Specs Pills */}
+          <div className="bg-[#131d2e] border border-gray-800 rounded-2xl p-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+            <div className="space-y-1">
+              <span className="text-gray-400 text-[10px] uppercase font-bold">Transmission</span>
+              <p className="text-xs font-bold text-white capitalize">{car.transmission}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-gray-400 text-[10px] uppercase font-bold">Seats</span>
+              <p className="text-xs font-bold text-white">{car.seats} Seats</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-gray-400 text-[10px] uppercase font-bold">Fuel Type</span>
+              <p className="text-xs font-bold text-white">{car.fuel || "Petrol"}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-gray-400 text-[10px] uppercase font-bold">Location</span>
+              <p className="text-xs font-bold text-white">{car.neighbourhood}</p>
+            </div>
+          </div>
+
+          {/* Vehicle Description */}
+          <div className="space-y-3">
+            <h2 className="text-lg font-bold text-white">About this Vehicle</h2>
+            <p className="text-xs text-gray-300 leading-relaxed">
+              {car.description}
+            </p>
+          </div>
+
+          {/* Host Profile Card */}
+          <div className="bg-[#131d2e] border border-gray-800 rounded-2xl p-5 space-y-4">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Hosted by</h3>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-emerald-800 border-2 border-emerald-500 text-white font-bold text-lg flex items-center justify-center">
+                {car.hostName ? car.hostName[0] : "H"}
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white">{car.hostName || "Verified Host"}</h4>
+                <p className="text-xs text-gray-400">{car.hostLocation || car.neighbourhood}</p>
+              </div>
+              {car.isSuperhost && (
+                <span className="ml-auto bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-3 py-1 rounded-full">
+                  Superhost
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Included Features & Insurance */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-white">Protection & Safety</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-gray-300">
+              <div className="flex items-center gap-2 bg-[#131d2e] p-3 rounded-xl border border-gray-800">
+                <span className="text-emerald-400">✓</span> Nyala Insurance Comprehensive Policy
+              </div>
+              <div className="flex items-center gap-2 bg-[#131d2e] p-3 rounded-xl border border-gray-800">
+                <span className="text-emerald-400">✓</span> 24/7 Addis Roadside Rescue
+              </div>
+              <div className="flex items-center gap-2 bg-[#131d2e] p-3 rounded-xl border border-gray-800">
+                <span className="text-emerald-400">✓</span> Telebirr & CBE Escrow Protection
+              </div>
+              <div className="flex items-center gap-2 bg-[#131d2e] p-3 rounded-xl border border-gray-800">
+                <span className="text-emerald-400">✓</span> Free Cancellation up to 24h before
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right Column: Interactive Booking Card */}
+        <div className="lg:col-span-5 sticky top-24">
+          <div className="bg-[#131d2e] border border-gray-800 rounded-2xl p-6 space-y-6 shadow-xl">
+            
+            {/* Price Header */}
+            <div className="flex items-baseline justify-between pb-4 border-b border-gray-800">
+              <div>
+                <span className="text-2xl font-extrabold text-white">
+                  {car.pricePerDay.toLocaleString()}
+                </span>
+                <span className="text-xs text-gray-400 font-medium"> ETB / day</span>
+              </div>
+              <span className="text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                Available Now
+              </span>
+            </div>
+
+            {/* Booking Form */}
+            {bookingSuccess ? (
+              <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl space-y-3 text-center">
+                <p className="text-emerald-400 font-bold text-sm">🎉 Trip Requested Successfully!</p>
+                <p className="text-xs text-gray-300">
+                  Your request for {days} day(s) has been sent to {car.hostName || "the host"}. You will receive confirmation shortly.
+                </p>
+                <Link
+                  href="/"
+                  className="inline-block bg-white text-black font-bold text-xs px-4 py-2 rounded-xl mt-2"
+                >
+                  Return to Home
+                </Link>
+              </div>
+            ) : (
+              <form onSubmit={handleBooking} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-900 p-2.5 rounded-xl border border-gray-800">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="bg-transparent text-xs font-semibold text-white focus:outline-none w-full"
+                      required
+                    />
+                  </div>
+
+                  <div className="bg-gray-900 p-2.5 rounded-xl border border-gray-800">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="bg-transparent text-xs font-semibold text-white focus:outline-none w-full"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Price Calculation Breakdown */}
+                <div className="space-y-2 pt-2 text-xs text-gray-300 border-t border-gray-800/80">
+                  <div className="flex justify-between">
+                    <span>{car.pricePerDay.toLocaleString()} ETB × {days} days</span>
+                    <span className="font-medium">{subtotal.toLocaleString()} ETB</span>
+                  </div>
+                  <div className="flex justify-between text-gray-400">
+                    <span>Platform Service Fee (5%)</span>
+                    <span>{serviceFee.toLocaleString()} ETB</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-gray-800 font-bold text-sm text-white">
+                    <span>Total Rate</span>
+                    <span className="text-emerald-400">{grandTotal.toLocaleString()} ETB</span>
+                  </div>
+                </div>
+
+                {/* Submit Action Button */}
+                <button
+                  type="submit"
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition text-xs"
+                >
+                  Confirm & Request Trip
+                </button>
+              </form>
+            )}
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
