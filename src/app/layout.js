@@ -1,5 +1,7 @@
+// src/app/layout.js
+import { Suspense } from "react";
 import "./globals.css";
-import Navbar from "../components/Navbar";
+import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata = {
@@ -11,7 +13,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="bg-[#0b1320] text-gray-100 antialiased min-h-screen flex flex-col justify-between">
-        <Navbar />
+        <Suspense fallback={<div className="h-16 bg-[#0b1320] border-b border-gray-800" />}>
+          <Navbar />
+        </Suspense>
         <main className="flex-grow">{children}</main>
         <Footer />
       </body>
