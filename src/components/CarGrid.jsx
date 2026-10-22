@@ -1,11 +1,12 @@
 "use client";
 
 import CarCard from "./CarCard";
-import { INITIAL_CARS } from "@/lib/seedData";
+import { useApp } from "@/context/AppContext";
 
 export default function CarGrid() {
+  const { cars } = useApp();
   // Only render approved cars on the public marketplace
-  const approvedCars = INITIAL_CARS.filter((car) => car.status === "approved");
+  const approvedCars = cars.filter((car) => car.status === "approved");
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 my-8">

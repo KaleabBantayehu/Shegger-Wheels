@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import { INITIAL_CARS } from "@/lib/seedData";
 import CarDetailClient from "@/components/CarDetailClient";
 
@@ -10,11 +9,11 @@ export async function generateStaticParams() {
 
 export default async function CarDetailPage({ params }) {
   const resolvedParams = await params;
-  const car = INITIAL_CARS.find((c) => c.id === resolvedParams.id);
+  // The seed car is only the server-rendered first value. After hydration,
+  // CarDetailClient reads the live vehicle collection from AppContext, so
+  // persisted owner-created cars can also be displayed.
+  const initialCar =
+    INITIAL_CARS.find((c) => c.id === resolvedParams.id) || null;
 
-  if (!car) {
-    notFound();
-  }
-
-  return <CarDetailClient car={car} />;
+  return <CarDetailClient carId={resolvedParams.id} initialCar={initialCar} />;
 }

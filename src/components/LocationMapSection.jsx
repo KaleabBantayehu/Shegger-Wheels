@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { INITIAL_CARS } from "@/lib/seedData";
+import { useApp } from "@/context/AppContext";
 
 // Dynamically import map without server-side rendering
 const Map = dynamic(() => import("./Map"), {
@@ -14,7 +14,8 @@ const Map = dynamic(() => import("./Map"), {
 });
 
 export default function LocationMapSection() {
-  const approvedCars = INITIAL_CARS.filter((c) => c.status === "approved");
+  const { cars } = useApp();
+  const approvedCars = cars.filter((c) => c.status === "approved");
 
   const hubs = [
     {

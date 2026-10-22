@@ -3,31 +3,29 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { INITIAL_CARS, INITIAL_USERS, INITIAL_BOOKINGS } from "@/lib/seedData";
+import { useApp } from "@/context/AppContext";
 
 export default function AdminConsole() {
-  const [cars, setCars] = useState(INITIAL_CARS);
-  const [users, setUsers] = useState(INITIAL_USERS);
+  const { cars, users, bookings, setCarStatus } = useApp();
   const [activeTab, setActiveTab] = useState("moderation"); // "moderation" | "vehicles" | "users"
+  const [actionError, setActionError] = useState("");
 
   // Action handlers
   const handleApproveCar = (carId) => {
-    setCars((prevCars) =>
-      prevCars.map((c) => (c.id === carId ? { ...c, status: "approved" } : c))
-    );
+    const result = setCarStatus(carId, "approved");
+    setActionError(result.ok ? "" : result.error);
   };
 
   const handleRejectCar = (carId) => {
-    setCars((prevCars) =>
-      prevCars.map((c) => (c.id === carId ? { ...c, status: "rejected" } : c))
-    );
+    const result = setCarStatus(carId, "rejected");
+    setActionError(result.ok ? "" : result.error);
   };
 
   // Metrics calculation
   const pendingCars = cars.filter((c) => c.status === "pending");
   const approvedCars = cars.filter((c) => c.status === "approved");
-  const totalGrossVolume = INITIAL_BOOKINGS.reduce((sum, b) => sum + b.total, 0);
-  const totalPlatformFees = INITIAL_BOOKINGS.reduce((sum, b) => sum + b.fee, 0);
+  const totalGrossVolume = bookings.reduce((sum, b) => sum + b.total, 0);
+  const totalPlatformFees = bookings.reduce((sum, b) => sum + b.fee, 0);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -54,6 +52,15 @@ export default function AdminConsole() {
           <span className="text-xs font-semibold text-emerald-400">System Live & Synchronized</span>
         </div>
       </div>
+
+      {actionError && (
+        <div
+          role="alert"
+          className="bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-semibold p-3 rounded-xl"
+        >
+          {actionError}
+        </div>
+      )}
 
       {/* Platform Analytics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

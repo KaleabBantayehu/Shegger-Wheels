@@ -120,9 +120,34 @@ interface Session {
 ```
 
 ## 3. Storage Utility Helpers & Data Boundaries
-To prevent JSON parsing failures and handle missing data safely, all application components interact with browser storage through unified data access functions:   readStorage<T>(key: string, fallback: T): T: Safely reads and parses JSON from localStorage/sessionStorage. Returns fallback if the key is missing or stored data is malformed.   writeStorage<T>(key: string, value: T): boolean: Serializes and writes data safely, handling browser storage quota exceptions.   initializeDemoData(): void: Seeds default records on app load if storage keys are absent without overwriting modified user state.   resetDemoData(): void: Clears current app keys and re-populates initial seed data for testing.  
+To prevent JSON parsing failures and handle missing data safely, all application components interact with browser storage through unified data access functions:
+
+- `readStorage(key, fallback, storageType)`: Safely reads and parses JSON from `localStorage` or `sessionStorage`. Returns the fallback if the key is missing or the stored data is malformed.
+- `writeStorage(key, value, storageType)`: Serializes and writes data safely, returning `false` if the browser rejects the write (for example, when the storage quota is full).
+- `removeStorage(key, storageType)`: Safely removes one storage key.
+- `initializeDemoData()`: Idempotently seeds missing or malformed demo keys. It never overwrites valid existing data, so user changes survive reloads. Reviews, disputes, and announcements currently start as empty arrays because the existing data model has no demo records for them.
+- `resetDemoData()`: Removes every documented local and session key, then restores the original seed data. This includes user, car, booking, review, dispute, announcement, session, and checkout-draft keys.
+
+`STORAGE_KEYS` in `src/lib/storage.js` is the single source of truth for these key names.
+
+### 3.1 Reactive Application State
+`src/context/AppContext.jsx` provides the single reactive application store:
+
+- The server render and first client render use the seed arrays, avoiding `window`/`localStorage` access during SSR and avoiding hydration mismatches.
+- After mount, the provider calls `initializeDemoData()`, hydrates users, cars, bookings, reviews, disputes, and announcements from browser storage, and reads the active demo session from `sessionStorage`.
+- Every mutation writes through `writeStorage()` before updating React state, so navigation between pages sees the same data and reloads preserve changes.
+- Pages and components read collections through `useApp()` instead of importing `INITIAL_*` data directly. The vehicle detail route uses the seed car only as its server-rendered fallback.
+
+### 3.2 Mutation Contracts
+Car and booking mutations are exposed by `AppContext` and return `{ ok: true, ... }` or `{ ok: false, error: "..." }`.
+
+- Car operations: `createCar`, `updateCar`, `setCarStatus`, `softDeleteCar`, `setCarAvailability`.
+- Booking operations: `createBooking`, `updateBookingStatus`, `cancelBooking`.
+- Authentication/role/ownership checks run inside the helpers, not only in the UI.
+- `createBooking` rejects invalid or past dates, unapproved cars, owner self-bookings, dates blocked by `unavailableDates`, and overlapping active bookings (`requested`, `confirmed`, `in_progress`, `disputed`).
+- `softDeleteCar` changes status to `inactive` instead of deleting records, preserving booking and review foreign keys.
 
 ## 4. Error Recovery & Validation Protocols
 1. Missing or Corrupted Storage Keys: If parsing fails, readStorage captures the error, logs a warning, and falls back to safe empty defaults ([] or null) to prevent application crashes. 
-2. Double Booking Guard: Prior to writing a new booking, system logic verifies that startDate and endDate do not overlap with existing confirmed or in_progress bookings for the specified carId. 
+2. Double Booking Guard: Prior to writing a new booking, `createBooking` verifies that the requested range does not overlap existing `requested`, `confirmed`, `in_progress`, or `disputed` bookings for the same car. 
 3. Data Integrity & Foreign Keys: Deleting or deactivating cars soft-updates the status property rather than severing foreign keys on past bookings or reviews.   

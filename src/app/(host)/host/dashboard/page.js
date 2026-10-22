@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { INITIAL_CARS, INITIAL_BOOKINGS } from "@/lib/seedData";
+import { useApp } from "@/context/AppContext";
 
 export default function HostDashboard() {
-  const [cars, setCars] = useState(INITIAL_CARS);
+  const { cars, bookings, createCar } = useApp();
   const [activeTab, setActiveTab] = useState("vehicles"); // "vehicles" | "bookings" | "add-car"
+  const [actionError, setActionError] = useState("");
 
   // Form state for adding a new car
   const [newCar, setNewCar] = useState({
@@ -28,39 +29,18 @@ export default function HostDashboard() {
   const totalVehicles = cars.length;
   const approvedVehicles = cars.filter((c) => c.status === "approved").length;
   const pendingVehicles = cars.filter((c) => c.status === "pending").length;
-  const totalEarnings = INITIAL_BOOKINGS.reduce((sum, b) => sum + b.total, 0);
+  const totalEarnings = bookings.reduce((sum, b) => sum + b.total, 0);
 
   const handleAddCar = (e) => {
     e.preventDefault();
-    const createdCar = {
-      id: `car-${Date.now()}`,
-      ownerId: "user-owner-1",
-      make: newCar.make,
-      model: newCar.model,
-      edition: newCar.edition || "Standard",
-      year: Number(newCar.year),
-      transmission: newCar.transmission,
-      fuel: newCar.fuel,
-      seats: Number(newCar.seats),
-      city: "Addis Ababa",
-      neighbourhood: newCar.neighbourhood,
-      latitude: 9.0107,
-      longitude: 38.7612,
-      pricePerDay: Number(newCar.pricePerDay),
-      rating: 5.0,
-      reviewsCount: 0,
-      tags: ["Pending Approval"],
-      hostName: "Tigist Alemu (Owner)",
-      hostLocation: newCar.neighbourhood,
-      isSuperhost: true,
-      photos: [newCar.photoUrl],
-      description: newCar.description,
-      status: "pending", // New listings start in pending status for admin moderation
-      unavailableDates: [],
-      createdAt: new Date().toISOString(),
-    };
+    const result = createCar(newCar);
 
-    setCars([createdCar, ...cars]);
+    if (!result.ok) {
+      setActionError(result.error);
+      return;
+    }
+
+    setActionError("");
     setActiveTab("vehicles");
     setNewCar({
       make: "",
@@ -101,6 +81,15 @@ export default function HostDashboard() {
           + List New Vehicle
         </button>
       </div>
+
+      {actionError && (
+        <div
+          role="alert"
+          className="bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-semibold p-3 rounded-xl"
+        >
+          {actionError}
+        </div>
+      )}
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -144,7 +133,7 @@ export default function HostDashboard() {
               : "text-gray-400 hover:text-white"
           }`}
         >
-          Bookings ({INITIAL_BOOKINGS.length})
+          Bookings ({bookings.length})
         </button>
         <button
           onClick={() => setActiveTab("add-car")}
@@ -230,7 +219,7 @@ export default function HostDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
-                {INITIAL_BOOKINGS.map((booking) => (
+                {bookings.map((booking) => (
                   <tr key={booking.id} className="hover:bg-gray-800/30">
                     <td className="p-4 font-bold text-white">{booking.id}</td>
                     <td className="p-4">

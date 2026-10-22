@@ -3,11 +3,32 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useApp } from "@/context/AppContext";
 
-export default function CarDetailClient({ car }) {
+export default function CarDetailClient({ carId, initialCar }) {
+  const { cars } = useApp();
+  // Use the reactive store after hydration, with the server seed as fallback.
+  const car = cars.find((candidate) => candidate.id === carId) || initialCar;
   const [startDate, setStartDate] = useState("2026-03-01");
   const [endDate, setEndDate] = useState("2026-03-04");
   const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  if (!car) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-20 text-center space-y-4">
+        <h1 className="text-2xl font-extrabold text-white">Vehicle not found</h1>
+        <p className="text-sm text-gray-400">
+          This listing may have been removed or is no longer available.
+        </p>
+        <Link
+          href="/cars"
+          className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition"
+        >
+          Browse cars
+        </Link>
+      </div>
+    );
+  }
 
   const start = new Date(startDate);
   const end = new Date(endDate);

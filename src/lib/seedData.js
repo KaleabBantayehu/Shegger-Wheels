@@ -33,7 +33,7 @@ export const INITIAL_USERS = [
 ];
 
 /**
- * Initial seed cars: Matching the exact UI screenshot (Prado, Tucson, Mercedes E200, RAV4, Dzire, HiAce).
+ * Initial seed cars: Matching exact vehicle models with local AVIF assets.
  */
 export const INITIAL_CARS = [
   {
@@ -57,9 +57,7 @@ export const INITIAL_CARS = [
     hostName: "Eskinder M.",
     hostLocation: "Bole Medhanialem",
     isSuperhost: true,
-    photos: [
-      "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80",
-    ],
+    photos: ["/images/cars/prado.avif"],
     description: "Full-size 4WD Prado SUV in pristine condition, perfect for city VIP transport or long distance tours.",
     status: "approved",
     unavailableDates: [],
@@ -86,9 +84,7 @@ export const INITIAL_CARS = [
     hostName: "Yonas K.",
     hostLocation: "Kazanchis / ECA",
     isSuperhost: false,
-    photos: [
-      "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80",
-    ],
+    photos: ["/images/cars/tucson.avif"],
     description: "Modern gray crossover with luxury interior, smooth drive across Kazanchis and Bole.",
     status: "approved",
     unavailableDates: [],
@@ -115,9 +111,7 @@ export const INITIAL_CARS = [
     hostName: "Dawit T.",
     hostLocation: "Bole Airport / VVIP",
     isSuperhost: true,
-    photos: [
-      "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=800&q=80",
-    ],
+    photos: ["/images/cars/mercedes.avif"],
     description: "Executive luxury sedan for business delegates and diplomatic visits.",
     status: "approved",
     unavailableDates: [],
@@ -144,9 +138,7 @@ export const INITIAL_CARS = [
     hostName: "Bethlehem T.",
     hostLocation: "CMC District",
     isSuperhost: false,
-    photos: [
-      "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80",
-    ],
+    photos: ["/images/cars/rav4.avif"],
     description: "Ultra-efficient blue hybrid SUV, exceptionally low fuel consumption for daily commuting.",
     status: "approved",
     unavailableDates: [],
@@ -173,9 +165,7 @@ export const INITIAL_CARS = [
     hostName: "Mulugheta G.",
     hostLocation: "Piassa / Arada",
     isSuperhost: true,
-    photos: [
-      "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=800&q=80",
-    ],
+    photos: ["/images/cars/dzire.avif"],
     description: "Economical compact sedan, reliable manual transmission and high mileage.",
     status: "approved",
     unavailableDates: [],
@@ -202,9 +192,7 @@ export const INITIAL_CARS = [
     hostName: "Henes B.",
     hostLocation: "Sarbet & Old Airport",
     isSuperhost: true,
-    photos: [
-      "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=800&q=80",
-    ],
+    photos: ["/images/cars/hiace.avif"],
     description: "Spacious 14-passenger high-roof van ideal for corporate team travel or family tours.",
     status: "approved",
     unavailableDates: [],
@@ -231,11 +219,9 @@ export const INITIAL_CARS = [
     hostName: "Abebe B.",
     hostLocation: "Gotera",
     isSuperhost: false,
-    photos: [
-      "https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=800&q=80",
-    ],
+    photos: ["/images/cars/picanto.avif"],
     description: "Compact city car, super easy to park in crowded markets.",
-    status: "pending", // Unapproved listing for testing admin moderation
+    status: "pending",
     unavailableDates: [],
     createdAt: "2026-01-28T15:10:00.000Z",
   },

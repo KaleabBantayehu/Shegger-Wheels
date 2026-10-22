@@ -1,8 +1,13 @@
 // lib/auth.js
-import { readStorage, writeStorage, removeStorage } from './storage';
+import {
+  readStorage,
+  writeStorage,
+  removeStorage,
+  STORAGE_KEYS,
+} from './storage';
 
-const SESSION_KEY = 'sw_session_v1';
-const USERS_KEY = 'sw_users_v1';
+const SESSION_KEY = STORAGE_KEYS.session;
+const USERS_KEY = STORAGE_KEYS.users;
 
 /**
  * Reads the active demo session from sessionStorage.

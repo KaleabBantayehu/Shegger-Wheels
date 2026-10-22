@@ -1,5 +1,52 @@
 // lib/storage.js
 import { INITIAL_USERS, INITIAL_CARS, INITIAL_BOOKINGS } from './seedData';
+
+/**
+ * Every browser-storage key used by the demo application.
+ * Keeping the names here prevents pages and helpers from inventing their own keys.
+ */
+export const STORAGE_KEYS = {
+  users: 'sw_users_v1',
+  cars: 'sw_cars_v1',
+  bookings: 'sw_bookings_v1',
+  reviews: 'sw_reviews_v1',
+  disputes: 'sw_disputes_v1',
+  announcements: 'sw_announcements_v1',
+  session: 'sw_session_v1',
+  checkoutDraft: 'sw_checkout_draft_v1',
+};
+
+// These keys live in localStorage and survive a browser restart.
+const LOCAL_STORAGE_KEYS = [
+  STORAGE_KEYS.users,
+  STORAGE_KEYS.cars,
+  STORAGE_KEYS.bookings,
+  STORAGE_KEYS.reviews,
+  STORAGE_KEYS.disputes,
+  STORAGE_KEYS.announcements,
+];
+
+// These keys live in sessionStorage and end when the tab closes.
+const SESSION_STORAGE_KEYS = [
+  STORAGE_KEYS.session,
+  STORAGE_KEYS.checkoutDraft,
+];
+
+/**
+ * Initial records for the demo.
+ *
+ * Reviews, disputes, and announcements are part of the documented data model
+ * but currently have no seed records, so they start as empty arrays.
+ */
+const DEMO_SEEDS = [
+  [STORAGE_KEYS.users, INITIAL_USERS],
+  [STORAGE_KEYS.cars, INITIAL_CARS],
+  [STORAGE_KEYS.bookings, INITIAL_BOOKINGS],
+  [STORAGE_KEYS.reviews, []],
+  [STORAGE_KEYS.disputes, []],
+  [STORAGE_KEYS.announcements, []],
+];
+
 /**
  * Safely reads and parses JSON data from browser storage (localStorage or sessionStorage).
  * @param {string} key - The storage key (e.g., 'sw_cars_v1')
@@ -70,30 +117,53 @@ export function removeStorage(key, storageType = 'localStorage') {
   }
 }
 
-
-export function initializeDemoData() {
-    if (typeof window === "undefined") return;
-
-    if(window.localStorage.getItem("sw_users_v1") === null) {
-        writeStorage("sw_users_v1", INITIAL_USERS)
-    }
-
-    if(window.localStorage.getItem("sw_cars_v1") === null) {
-        writeStorage("sw_cars_v1", INITIAL_CARS)
-    }
-    
-    if(window.localStorage.getItem("sw_bookings_v1" === null)){
-        writeStorage("sw_bookings_v1", INITIAL_BOOKINGS)
-    }
+/**
+ * Returns true when a stored value exists and is valid JSON.
+ * A malformed value should be repaired with demo data instead of crashing the app.
+ */
+function hasValidStoredJson(key) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (raw === null) return false;
+    JSON.parse(raw);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
+/**
+ * Seeds demo data on first browser load.
+ *
+ * This function is idempotent:
+ * - Missing keys are filled with seed data.
+ * - Malformed JSON is repaired with seed data.
+ * - Valid existing data is never overwritten, so user changes survive reloads.
+ */
+export function initializeDemoData() {
+  if (typeof window === "undefined") return;
+
+  for (const [key, seedValue] of DEMO_SEEDS) {
+    if (!hasValidStoredJson(key)) {
+      writeStorage(key, seedValue);
+    }
+  }
+}
+
+/**
+ * Clears every documented app key and restores the original demo data.
+ * The active demo session and any checkout draft are intentionally cleared too.
+ */
 export function resetDemoData() {
   if (typeof window === "undefined") return;
 
-  writeStorage("sw_users_v1", INITIAL_USERS);
-  writeStorage("sw_cars_v1", INITIAL_CARS);
-  writeStorage("sw_bookings_v1", INITIAL_BOOKINGS);
-  removeStorage("sw_reviews_v1");
-  removeStorage("sw_disputes_v1");
-  removeStorage("sw_session_v1", "sessionStorage");
+  for (const key of LOCAL_STORAGE_KEYS) {
+    removeStorage(key, 'localStorage');
+  }
+
+  for (const key of SESSION_STORAGE_KEYS) {
+    removeStorage(key, 'sessionStorage');
+  }
+
+  initializeDemoData();
 }
