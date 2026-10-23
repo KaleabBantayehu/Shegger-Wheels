@@ -9,6 +9,21 @@ export const BLOCKING_BOOKING_STATUSES = [
   'disputed',
 ];
 
+export const INITIAL_BOOKING_STATUSES = [
+  'requested',
+  'confirmed',
+  'declined',
+  'cancelled',
+  'completed',
+];
+
+export const LEGACY_BOOKING_STATUSES = [
+  'in_progress',
+  'reviewed',
+  'disputed',
+  'resolved',
+];
+
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
@@ -99,6 +114,73 @@ export function hasBookingOverlap(bookings, carId, startDate, endDate) {
       BLOCKING_BOOKING_STATUSES.includes(booking.status) &&
       dateRangesOverlap(startDate, endDate, booking.startDate, booking.endDate),
   );
+}
+
+/**
+ * Explains whether an initial-release booking status transition is allowed.
+ * Legacy statuses remain readable but cannot be used for new transitions.
+ */
+export function getBookingStatusTransitionError(
+  booking,
+  nextStatus,
+  actor,
+  currentDate = todayIsoDate(),
+) {
+  if (!booking || !INITIAL_BOOKING_STATUSES.includes(nextStatus)) {
+    return 'Invalid booking status transition';
+  }
+
+  if (!INITIAL_BOOKING_STATUSES.includes(booking.status)) {
+    return 'Legacy booking statuses cannot be changed through the current workflow';
+  }
+
+  if (booking.status === nextStatus) {
+    return 'Booking is already in that status';
+  }
+
+  if (['declined', 'cancelled', 'completed'].includes(booking.status)) {
+    return 'This booking status cannot be reopened';
+  }
+
+  if (actor !== 'owner' && actor !== 'renter' && actor !== 'admin') {
+    return 'Not allowed';
+  }
+
+  if (booking.status === 'requested') {
+    if (nextStatus === 'confirmed' || nextStatus === 'declined') {
+      return actor === 'owner' || actor === 'admin' ? null : 'Not allowed';
+    }
+
+    if (nextStatus === 'cancelled') {
+      return actor === 'renter' || actor === 'admin' ? null : 'Not allowed';
+    }
+
+    return 'Invalid booking status transition';
+  }
+
+  if (booking.status === 'confirmed') {
+    if (nextStatus === 'cancelled') {
+      if (actor !== 'renter' && actor !== 'admin') {
+        return 'Owners cannot cancel confirmed bookings';
+      }
+      if (!isValidIsoDate(booking.startDate) || currentDate >= booking.startDate) {
+        return 'Confirmed bookings cannot be cancelled on or after pickup';
+      }
+      return null;
+    }
+
+    if (nextStatus === 'completed') {
+      if (actor !== 'owner' && actor !== 'admin') {
+        return 'Not allowed';
+      }
+      if (!isValidIsoDate(booking.endDate) || currentDate < booking.endDate) {
+        return 'Booking cannot be completed before the return date';
+      }
+      return null;
+    }
+  }
+
+  return 'Invalid booking status transition';
 }
 
 /**

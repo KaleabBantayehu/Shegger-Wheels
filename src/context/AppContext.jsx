@@ -26,6 +26,7 @@ import {
 import {
   calculateBookingDays,
   calculateBookingTotals,
+  getBookingStatusTransitionError,
   hasBookingOverlap,
   isCarUnavailable,
   isValidIsoDate,
@@ -481,16 +482,15 @@ export function AppProvider({ children }) {
       const isOwner = booking.ownerId === currentUser.id;
       const isRenter = booking.renterId === currentUser.id;
 
-      if (!isAdmin) {
-        if (status === "cancelled") {
-          if (!isOwner && !isRenter) return { ok: false, error: "Not yours" };
-        } else if (
-          ["confirmed", "declined", "in_progress", "completed"].includes(status)
-        ) {
-          if (!isOwner) return { ok: false, error: "Not yours" };
-        } else {
-          return { ok: false, error: "Not allowed" };
-        }
+      const actor = isAdmin ? "admin" : isOwner ? "owner" : isRenter ? "renter" : null;
+      const transitionError = getBookingStatusTransitionError(
+        booking,
+        status,
+        actor,
+        todayIsoDate(),
+      );
+      if (transitionError) {
+        return { ok: false, error: transitionError };
       }
 
       const nextBookings = data.bookings.map((candidate) => {
