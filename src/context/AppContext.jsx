@@ -408,8 +408,8 @@ export function AppProvider({ children }) {
       if (!isValidIsoDate(startDate) || !isValidIsoDate(endDate)) {
         return { ok: false, error: "Invalid date range" };
       }
-      if (endDate < startDate) {
-        return { ok: false, error: "End date cannot be before start date" };
+      if (endDate <= startDate) {
+        return { ok: false, error: "End date must be after the start date" };
       }
       if (startDate < todayIsoDate()) {
         return { ok: false, error: "Start date cannot be in the past" };

@@ -35,7 +35,8 @@ export function todayIsoDate(date = new Date()) {
 
 /**
  * Returns the number of rental days for a date range.
- * Same-day rental counts as one day. A reversed range returns null.
+ * Pickup is inclusive and return is exclusive. Same-day and reversed
+ * ranges are invalid.
  */
 export function calculateBookingDays(startDate, endDate) {
   if (!isValidIsoDate(startDate) || !isValidIsoDate(endDate)) {
@@ -45,30 +46,46 @@ export function calculateBookingDays(startDate, endDate) {
   const start = Date.parse(`${startDate}T00:00:00Z`);
   const end = Date.parse(`${endDate}T00:00:00Z`);
 
-  if (end < start) {
+  if (end <= start) {
     return null;
   }
 
-  return Math.max(1, Math.round((end - start) / 86400000));
+  return Math.round((end - start) / 86400000);
 }
 
 /**
- * Returns true when two inclusive date ranges share at least one day.
+ * Returns true when two half-open date ranges share at least one day.
  */
 export function dateRangesOverlap(startA, endA, startB, endB) {
-  return startA <= endB && startB <= endA;
+  if (
+    !isValidIsoDate(startA) ||
+    !isValidIsoDate(endA) ||
+    !isValidIsoDate(startB) ||
+    !isValidIsoDate(endB)
+  ) {
+    return false;
+  }
+
+  return startA < endB && startB < endA;
 }
 
 /**
- * Returns true when any blocked date falls inside the requested range.
+ * Returns true when any blocked date falls inside the requested
+ * half-open range.
  */
 export function isCarUnavailable(car, startDate, endDate) {
-  if (!car || !Array.isArray(car.unavailableDates)) {
+  if (
+    !car ||
+    !Array.isArray(car.unavailableDates) ||
+    !isValidIsoDate(startDate) ||
+    !isValidIsoDate(endDate) ||
+    endDate <= startDate
+  ) {
     return false;
   }
 
   return car.unavailableDates.some(
-    (date) => date >= startDate && date <= endDate,
+    (date) => isValidIsoDate(date) && date >= startDate && date < endDate,
   );
 }
 
