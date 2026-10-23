@@ -17,7 +17,7 @@ Because this application operates without a traditional backend database, browse
 | **localStorage** | `sw_disputes_v1` | `Dispute[]` | Dispute records and resolution logs. Persists until cleared[cite: 3]. |
 | **localStorage** | `sw_announcements_v1` | `Announcement[]` | Platform-wide announcements from admins. Persists until cleared[cite: 3]. |
 | **sessionStorage** | `sw_session_v1` | `Session` | Currently signed-in demo user ID and auth state. Ends when tab closes[cite: 3]. |
-| **sessionStorage** | `sw_checkout_draft_v1` | `CheckoutDraft` | Temporary selected dates and checkout summary prior to payment confirmation[cite: 3]. |
+| **sessionStorage** | `sw_checkout_draft_v1` | `CheckoutDraft` | Reserved temporary storage key; no checkout route currently uses it[cite: 3]. |
 
 ---
 
@@ -76,7 +76,7 @@ interface Booking {
   fee: number;              // Calculated platform fee snapshot[cite: 6]
   total: number;            // Total price payable (subtotal + fee)[cite: 6]
   paymentStatus: 'unpaid' | 'paid' | 'refunded'; // Mock transaction status[cite: 6, 7]
-  status: 'requested' | 'confirmed' | 'in_progress' | 'completed' | 'reviewed' | 'declined' | 'cancelled' | 'disputed' | 'resolved'; // Lifecycle state[cite: 6, 7]
+  status: 'requested' | 'confirmed' | 'declined' | 'cancelled' | 'completed' | 'in_progress' | 'reviewed' | 'disputed' | 'resolved'; // Initial workflow plus readable legacy states[cite: 6, 7]
   createdAt: string;        // ISO 8601 Date-time string[cite: 6]
   updatedAt: string;        // ISO 8601 Date-time string[cite: 6]
 }
@@ -121,13 +121,54 @@ interface Session {
 }
 ```
 
+## 2.7 Runtime date, pricing, and booking-status rules
+
+The runtime uses ISO date-only strings (`YYYY-MM-DD`) and treats rental
+intervals as half-open: `[startDate, endDate)`.
+
+- Pickup is inclusive.
+- Return is exclusive.
+- October 25 to October 28 represents three rental days.
+- Same-day and reversed ranges are invalid.
+- A booking ending on October 28 does not overlap a booking beginning on
+  October 28.
+- An `unavailableDates` entry on the return date does not block the rental;
+  an entry between pickup and return does.
+
+Booking totals are calculated with the existing formula:
+
+```text
+subtotal = pricePerDay * days
+fee = Math.round(subtotal * 0.05)
+total = subtotal + fee
+```
+
+All functional prices and totals are in ETB. The visible USD selector does not
+perform conversion.
+
+The initial booking workflow uses these statuses and transitions:
+
+| Current status | Next status | Allowed actor |
+| :--- | :--- | :--- |
+| `requested` | `confirmed` or `declined` | Car owner or admin |
+| `requested` | `cancelled` | Renter or admin |
+| `confirmed` | `cancelled` before pickup | Renter or admin |
+| `confirmed` | `completed` on or after return date | Car owner or admin |
+
+`declined`, `cancelled`, and `completed` are terminal in this workflow. Legacy
+statuses such as `in_progress`, `reviewed`, `disputed`, and `resolved` may
+remain in stored demo records and are still readable, but cannot be changed
+through the ordinary new transition workflow. These are browser-demo rules;
+future Supabase constraints, RLS policies, and trusted database operations
+must enforce the corresponding server-side behavior.
+
 ## 3. Storage Utility Helpers & Data Boundaries
 To prevent JSON parsing failures and handle missing data safely, all application components interact with browser storage through unified data access functions:
 
 - `readStorage(key, fallback, storageType)`: Safely reads and parses JSON from `localStorage` or `sessionStorage`. Returns the fallback if the key is missing or the stored data is malformed.
 - `writeStorage(key, value, storageType)`: Serializes and writes data safely, returning `false` if the browser rejects the write (for example, when the storage quota is full).
 - `removeStorage(key, storageType)`: Safely removes one storage key.
-- `initializeDemoData()`: Idempotently seeds missing or malformed demo keys. It never overwrites valid existing data, so user changes survive reloads. Reviews, disputes, and announcements currently start as empty arrays because the existing data model has no demo records for them.
+- `initializeDemoData()`: Idempotently seeds missing or malformed demo keys. It never overwrites valid existing data, so user changes survive reloads. Reviews, disputes, and announcements currently start as empty arrays because their workflows are not implemented.
 - `initializeDemoData()` also removes legacy `passwordHash` properties from stored user objects in place; it does not clear users, cars, bookings, reviews, or other keys.
 - `resetDemoData()`: Removes every documented local and session key, then restores the original seed data. This includes user, car, booking, review, dispute, announcement, session, and checkout-draft keys.
 
@@ -148,9 +189,25 @@ Car and booking mutations are exposed by `AppContext` and return `{ ok: true, ..
 - Booking operations: `createBooking`, `updateBookingStatus`, `cancelBooking`.
 - Authentication/role/ownership checks run inside the helpers, not only in the UI.
 - `createBooking` rejects invalid or past dates, unapproved cars, owner self-bookings, dates blocked by `unavailableDates`, and overlapping active bookings (`requested`, `confirmed`, `in_progress`, `disputed`).
-- `softDeleteCar` changes status to `inactive` instead of deleting records, preserving booking and review foreign keys.
+- `updateBookingStatus` and `cancelBooking` enforce the initial status transitions, actor ownership, terminal states, and pickup/return date gates.
+- `softDeleteCar` changes status to `inactive` instead of deleting records. The runtime does not use a `deletedAt` field.
 
 ## 4. Error Recovery & Validation Protocols
 1. Missing or Corrupted Storage Keys: If parsing fails, readStorage captures the error, logs a warning, and falls back to safe empty defaults ([] or null) to prevent application crashes. 
-2. Double Booking Guard: Prior to writing a new booking, `createBooking` verifies that the requested range does not overlap existing `requested`, `confirmed`, `in_progress`, or `disputed` bookings for the same car. 
-3. Data Integrity & Foreign Keys: Deleting or deactivating cars soft-updates the status property rather than severing foreign keys on past bookings or reviews.   
+2. Double Booking Guard: Prior to writing a new booking, `createBooking` verifies that the requested half-open range does not overlap existing `requested`, `confirmed`, `in_progress`, or `disputed` bookings for the same car.
+3. Data Integrity & Foreign Keys: Deleting or deactivating cars soft-updates the `status` property rather than severing references on past bookings or reviews.
+
+## 5. Deferred entities and future Supabase design
+
+`Review`, `Dispute`, and `Announcement` storage keys and documented shapes are
+reserved for future workflows; no corresponding user-facing workflows are
+currently implemented. Checkout is also deferred: the checkout-draft key is
+not used by an implemented checkout route, and payment remains simulated.
+
+The current runtime stores car blockouts in `Car.unavailableDates`. A future
+Supabase design may replace that array with a separate `car_unavailability`
+table for range queries and database validation. That table does not exist in
+the current application.
+
+The runtime's `inactive` car status is the soft-delete behavior. `deletedAt`
+is not a current runtime field and should not be treated as implemented.

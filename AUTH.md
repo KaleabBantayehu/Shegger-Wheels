@@ -22,11 +22,12 @@ This document outlines the demo authentication model, role checks, route guards,
 
 | Role | Implemented access | Current capabilities |
 | :--- | :--- | :--- |
-| **Visitor / Renter** | Public routes | Browse the catalogue, search/filter cars, view car details, and use the demo sign-in page. |
+| **Visitor / Renter** | Public routes and `/bookings` when signed in as a renter | Browse the catalogue, search/filter cars, view car details, use the demo sign-in page, submit rental requests, and view the signed-in renter's booking history. |
 | **Owner** | Public routes plus `/host/dashboard` | Manage listing data through the existing owner dashboard and guarded store mutations. |
 | **Admin** | Public routes plus `/admin/console` | Moderate car listings and inspect current demo data through the existing admin console. |
 
-Booking history, checkout, dispute resolution, and a renter dashboard are not implemented in Phase 2A.
+The booking-history route is implemented. Checkout, dispute resolution, reviews,
+notifications, and a separate renter dashboard are not implemented.
 
 ---
 
@@ -64,9 +65,20 @@ The reactive store wraps car and booking mutations with authentication, role, an
 - **Booking mutations**: `createBooking`, `updateBookingStatus`, `cancelBooking`.
   - Booking creation requires the `renter` role and an approved car.
   - Owner self-booking, unavailable dates, past/invalid dates, and overlapping active bookings are rejected.
-  - Owners may confirm/decline/complete bookings for their own cars; renters may cancel their own bookings; admins may update any booking.
+  - Status transitions use the initial workflow: owners or admins may confirm
+    or decline a requested booking; renters or admins may cancel a requested
+    booking; renters or admins may cancel a confirmed booking before pickup;
+    and owners or admins may complete a confirmed booking on or after the
+    return date.
+  - `declined`, `cancelled`, and `completed` are terminal in the initial
+    workflow. Owners cannot cancel confirmed bookings through the ordinary
+    workflow.
+  - Legacy statuses remain readable, but cannot be changed through the
+    ordinary new transition workflow.
 
-Route guards protect the UI; mutation guards remain the authoritative application-level checks for store writes.
+Route guards protect the UI; mutation guards remain the authoritative
+application-level checks for store writes. These are still browser-side checks,
+not production authorization.
 
 ### 3.3 Remaining Limitations
 
@@ -81,9 +93,9 @@ Route guards protect the UI; mutation guards remain the authoritative applicatio
 ## 4. Required Negative Tests (UI Misuse Prevention)
 
 1. **Signed-out Write Attempt**: Calling `createCar` or `createBooking` without an active session returns `"Not signed in"` and does not mutate storage.
-2. **Cross-User Ownership Attempt**: Attempting to modify another owner's car returns `"Not yours"`. Attempting to cancel another renter's booking returns `"Not yours"`.
+2. **Cross-User Ownership Attempt**: Attempting to modify another owner's car is rejected. Attempting to cancel another renter's booking is rejected before storage is written.
 3. **Role Attempt**: Calling `setCarStatus` without the `admin` role returns `"Admin access required"`.
-4. **Past/Reverse Dates**: Booking with a past start date or an end date before the start date returns an explicit date error.
+4. **Past/Invalid Dates**: Booking with a past start date, same-day dates, or a reversed range returns an explicit date error.
 5. **Double Booking**: Booking dates that overlap a `requested`, `confirmed`, `in_progress`, or `disputed` booking for the same car are rejected.
 6. **Unsafe Return URL**: External URLs, protocol-relative URLs, backslash variants, malformed encodings, and encoded redirect tricks must resolve to `/`.
 7. **Route Guard**: A signed-out visitor is redirected to demo sign-in. A signed-in renter is denied owner and admin pages. An owner is denied the admin console. An admin is denied the owner dashboard.
