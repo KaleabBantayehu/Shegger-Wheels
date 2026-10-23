@@ -18,7 +18,9 @@ import {
 import {
   getCurrentSession,
   hasRole,
-  signInAsDemo as persistDemoSignIn,
+  signInAsDemoUser,
+  addOwnerRole,
+  registerUser as persistRegistration,
   signOut as clearDemoSession,
 } from "@/lib/auth";
 import {
@@ -145,24 +147,35 @@ export function AppProvider({ children }) {
     return user;
   }, [data.users, session]);
 
-  const signInDemoUser = useCallback(
-    (userId) => {
-      const user = data.users.find((candidate) => candidate.id === userId);
+  const signInDemoUser = useCallback((userId) => {
+    const result = signInAsDemoUser(userId);
+    if (result.ok) setSession(getCurrentSession());
+    return result;
+  }, []);
 
-      if (!user) return { ok: false, error: "User not found" };
-      if (user.status === "suspended") {
-        return { ok: false, error: "This account is suspended" };
-      }
-
-      if (!persistDemoSignIn(userId)) {
-        return { ok: false, error: "Could not start the demo session" };
-      }
-
+  const registerRenter = useCallback((input) => {
+    const result = persistRegistration(input);
+    if (result.ok) {
+      setData((previous) => ({
+        ...previous,
+        users: readStorage(STORAGE_KEYS.users, previous.users),
+      }));
       setSession(getCurrentSession());
-      return { ok: true };
-    },
-    [data.users],
-  );
+    }
+    return result;
+  }, []);
+
+  const becomeOwner = useCallback(() => {
+    if (!currentUser) return { ok: false, error: "Not signed in" };
+    const result = addOwnerRole(currentUser.id);
+    if (result.ok) {
+      setData((previous) => ({
+        ...previous,
+        users: readStorage(STORAGE_KEYS.users, previous.users),
+      }));
+    }
+    return result;
+  }, [currentUser]);
 
   const signOutUser = useCallback(() => {
     clearDemoSession();
@@ -517,6 +530,8 @@ export function AppProvider({ children }) {
     session,
     currentUser,
     signInDemoUser,
+    registerRenter,
+    becomeOwner,
     signOutUser,
     createCar,
     updateCar,

@@ -3,15 +3,21 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
+import { calculateBookingDays } from "@/lib/bookingRules";
 
 export default function CarDetailClient({ carId, initialCar }) {
-  const { cars } = useApp();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { cars, currentUser, createBooking } = useApp();
   // Use the reactive store after hydration, with the server seed as fallback.
   const car = cars.find((candidate) => candidate.id === carId) || initialCar;
-  const [startDate, setStartDate] = useState("2026-03-01");
-  const [endDate, setEndDate] = useState("2026-03-04");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingError, setBookingError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   if (!car) {
     return (
@@ -30,10 +36,7 @@ export default function CarDetailClient({ carId, initialCar }) {
     );
   }
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const diffTime = Math.max(end - start, 0);
-  const days = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 1);
+  const days = calculateBookingDays(startDate, endDate) || 0;
 
   const subtotal = car.pricePerDay * days;
   const serviceFee = Math.round(subtotal * 0.05);
@@ -41,6 +44,19 @@ export default function CarDetailClient({ carId, initialCar }) {
 
   const handleBooking = (e) => {
     e.preventDefault();
+    setBookingError("");
+    if (!currentUser) {
+      router.push(`/signin?next=${encodeURIComponent(pathname || `/cars/${carId}`)}`);
+      return;
+    }
+    if (submitting) return;
+    setSubmitting(true);
+    const result = createBooking({ carId, startDate, endDate });
+    setSubmitting(false);
+    if (!result.ok) {
+      setBookingError(result.error);
+      return;
+    }
     setBookingSuccess(true);
   };
 
@@ -179,6 +195,7 @@ export default function CarDetailClient({ carId, initialCar }) {
               </div>
             ) : (
               <form onSubmit={handleBooking} className="space-y-4">
+                {bookingError && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">{bookingError}</p>}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-gray-900 p-2.5 rounded-xl border border-gray-800">
                     <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Start Date</label>
@@ -221,7 +238,7 @@ export default function CarDetailClient({ carId, initialCar }) {
                   type="submit"
                   className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition text-xs"
                 >
-                  Confirm & Request Trip
+                  {submitting ? "Submitting…" : currentUser ? "Confirm & Request Trip" : "Sign in to request this trip"}
                 </button>
               </form>
             )}

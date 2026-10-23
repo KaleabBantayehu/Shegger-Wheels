@@ -1,5 +1,4 @@
 // src/app/layout.js
-import { Suspense } from "react";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -15,9 +14,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="bg-[#0b1320] text-gray-100 antialiased min-h-screen flex flex-col justify-between">
         <AppProvider>
-          <Suspense fallback={<div className="h-16 bg-[#0b1320] border-b border-gray-800" />}>
-            <Navbar />
-          </Suspense>
+          <Navbar />
           <main className="flex-grow">{children}</main>
           <Footer />
         </AppProvider>

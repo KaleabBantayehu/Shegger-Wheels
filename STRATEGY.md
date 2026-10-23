@@ -1,26 +1,46 @@
 # STRATEGY.md — Next.js Route & Rendering Architecture
 
-This document maps out every implemented route, its rendering strategy, and the client/server boundary mechanics[cite: 9, 10].
+This document maps the routes that exist in Phase 2A, their rendering strategy, and the client/server boundary used by the browser-storage demo.
 
 ---
 
-## 1. Route Strategy Matrix
+## 1. Implemented Route Matrix
 
-| Route | Purpose | Rendering Strategy | Justification |
+| Route | Purpose | Rendering strategy | Notes |
 | :--- | :--- | :--- | :--- |
-| `/` | Landing page | Client Component / Hybrid | Displays hero search, featured cars from seed data, and platform guide[cite: 5, 10]. |
-| `/cars` | Catalogue | Client Component | Filters, sort controls, and search interact directly with browser storage[cite: 5, 8, 10]. |
-| `/cars/[id]` | Car detail | Dynamic Client Component | Reads car ID from URL parameters and fetches vehicle details dynamically[cite: 5, 10]. |
-| `/signin` & `/signup` | Authentication | Client Component | Manages demo user selector and updates `sessionStorage`[cite: 3, 5, 7, 10]. |
-| `/dashboard` | Renter overview | Protected Client Component | Requires renter role; renders upcoming trips and status summaries[cite: 5, 7, 10]. |
-| `/bookings` | Booking history | Protected Client Component | Displays filterable list of user bookings and supports CSV export[cite: 5, 10, 12]. |
-| `/bookings/[id]` | Booking details | Protected Client Component | Checks ownership before rendering booking summary and receipt[cite: 5, 8, 10]. |
-| `/checkout` | Mock payment | Protected Client Component | Processes checkout draft and creates booking records in storage[cite: 3, 5, 10, 12]. |
-| `/owner/*` | Owner tools | Protected Client Component | Requires owner role; manages listings, availability, and earnings[cite: 4, 5, 10]. |
-| `/admin/*` | Admin panel | Protected Client Component | Requires admin role; handles moderation, user status, and dispute resolution[cite: 4, 5, 10]. |
+| `/` | Landing page | Server page with client widgets | Hero search, category shortcuts, featured cars, map section, and trust features. |
+| `/cars` | Public catalogue | Server page shell + client catalogue | Search, category/location/transmission/seats/max-price filters, sorting, real counts, and URL query synchronization. |
+| `/cars/[id]` | Car detail | Server wrapper + client detail | Reads the car ID, uses the live `AppContext` collection after hydration, and falls back to seed data for the initial render. |
+| `/signin` | Demo sign-in | Server wrapper + client form | Selects one of the seeded demo users, validates the safe `next` path, and updates `sessionStorage`. |
+| `/host/dashboard` | Owner dashboard | Protected client page | `app/(host)/host/layout.js` applies `RoleGuard` with `role="owner"`. |
+| `/admin/console` | Admin console | Protected client page | `app/(admin)/admin/layout.js` applies `RoleGuard` with `role="admin"`. |
+
+### Public catalogue rules
+
+- Only cars with `status === "approved"` and no soft-delete marker are shown.
+- `/cars` keeps filters in the URL (`q`, `category`, `location`, `transmission`, `seats`, `maxPrice`, `sort`) so refresh and browser history restore the same view.
+- The homepage search and category shortcuts link into `/cars` with the same query parameters.
+- The data model has no category field, so categories are derived from existing make/model/edition/fuel/price/tag fields in `lib/carCatalog.js`.
 
 ---
 
-## 2. Server vs Client Boundary (`BOUNDARY.md`)
-- **Server Components**: Used for static layouts, wrapper shells, metadata generation, and non-interactive page structure[cite: 2, 10].
-- **Client Components (`"use client"`)**: Used for all components reading from or writing to `localStorage`/`sessionStorage`, interactive forms, filters, maps, and stateful buttons[cite: 2, 10].
+## 2. Planned but Not Implemented
+
+The following routes appear in the product plan but do not exist in Phase 2A. Navigation does not link to them.
+
+- `/signup`
+- `/dashboard` (renter overview)
+- `/bookings` and `/bookings/[id]`
+- `/checkout`
+- Full owner tooling beyond `/host/dashboard`
+- Full admin tooling beyond `/admin/console`
+- Dispute management and report exports
+
+---
+
+## 3. Server vs Client Boundary
+
+- **Server Components**: Page shells, metadata, Suspense wrappers, and non-interactive structure.
+- **Client Components (`"use client"`)**: Components that read or write `localStorage`/`sessionStorage`, interactive forms, URL-synchronized catalogue filters, maps, navigation state, and stateful buttons.
+- **Route protection**: Browser-side `RoleGuard` because the demo session lives in `sessionStorage`. Middleware is not used and is not a substitute for the application-level guards.
+- **Data**: `AppProvider` hydrates the browser store after mount and exposes reactive state plus guarded mutations.

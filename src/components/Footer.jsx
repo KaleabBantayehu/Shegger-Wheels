@@ -42,32 +42,32 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <Link href="/locations/bole" className="hover:text-white transition">
+                <Link href="/cars?q=Bole" className="hover:text-white transition">
                   Bole Intl Airport & Hubs
                 </Link>
               </li>
               <li>
-                <Link href="/locations/kazanchis" className="hover:text-white transition">
+                <Link href="/cars?q=Kazanchis" className="hover:text-white transition">
                   Kazanchis Business District
                 </Link>
               </li>
               <li>
-                <Link href="/locations/piassa" className="hover:text-white transition">
+                <Link href="/cars?q=Piassa" className="hover:text-white transition">
                   Piassa & Arada Heritage Area
                 </Link>
               </li>
               <li>
-                <Link href="/locations/cmc" className="hover:text-white transition">
+                <Link href="/cars?q=CMC" className="hover:text-white transition">
                   CMC & Ayat Residential
                 </Link>
               </li>
               <li>
-                <Link href="/locations/sarbet" className="hover:text-white transition">
+                <Link href="/cars?q=Sarbet" className="hover:text-white transition">
                   Sarbet & Vatican Embassy Area
                 </Link>
               </li>
               <li>
-                <Link href="/locations/old-airport" className="hover:text-white transition">
+                <Link href="/cars?q=Old%20Airport" className="hover:text-white transition">
                   Old Airport (Bisrate Gabriel)
                 </Link>
               </li>
@@ -81,29 +81,23 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <Link href="/how-peer-rental-works" className="hover:text-white transition">
+                <Link href="/#why-rent" className="hover:text-white transition">
                   How Peer Rental Works
                 </Link>
               </li>
               <li>
-                <Link href="/list-your-vehicle" className="hover:text-white transition">
-                  List Your Vehicle
-                </Link>
+                <span className="text-gray-500">List Your Vehicle (coming soon)</span>
               </li>
               <li>
-                <Link href="/revenue-calculator" className="hover:text-white transition">
-                  Host Revenue Calculator
-                </Link>
+                <span className="text-gray-500">Host Revenue Calculator (coming soon)</span>
               </li>
               <li>
-                <Link href="/insurance" className="hover:text-white transition">
+                <Link href="/#why-rent" className="hover:text-white transition">
                   Insurance & Protection
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="hover:text-white transition">
-                  Help Center & FAQs
-                </Link>
+                <span className="text-gray-500">Help Center & FAQs (coming soon)</span>
               </li>
             </ul>
           </div>
@@ -164,15 +158,9 @@ export default function Footer() {
         <div className="border-t border-gray-800/60 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-gray-500">
           <p>© 2026 Sheggar Wheels Technologies PLC. All rights reserved. Addis Ababa, Ethiopia</p>
           <div className="flex gap-4">
-            <Link href="/terms" className="hover:text-gray-300 transition">
-              Rental Terms
-            </Link>
-            <Link href="/privacy" className="hover:text-gray-300 transition">
-              Privacy Policy
-            </Link>
-            <Link href="/host-agreement" className="hover:text-gray-300 transition">
-              Host Agreement
-            </Link>
+            <span className="text-gray-500">Rental Terms (coming soon)</span>
+            <span className="text-gray-500">Privacy Policy (coming soon)</span>
+            <span className="text-gray-500">Host Agreement (coming soon)</span>
           </div>
         </div>
 

@@ -6,7 +6,10 @@ import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 
 export default function HostDashboard() {
-  const { cars, bookings, createCar } = useApp();
+  const { cars, bookings, currentUser, createCar } = useApp();
+  const ownedCars = cars.filter((car) => car.ownerId === currentUser?.id);
+  const ownedCarIds = new Set(ownedCars.map((car) => car.id));
+  const ownedBookings = bookings.filter((booking) => ownedCarIds.has(booking.carId));
   const [activeTab, setActiveTab] = useState("vehicles"); // "vehicles" | "bookings" | "add-car"
   const [actionError, setActionError] = useState("");
 
@@ -26,10 +29,10 @@ export default function HostDashboard() {
   });
 
   // Calculate metrics
-  const totalVehicles = cars.length;
-  const approvedVehicles = cars.filter((c) => c.status === "approved").length;
-  const pendingVehicles = cars.filter((c) => c.status === "pending").length;
-  const totalEarnings = bookings.reduce((sum, b) => sum + b.total, 0);
+  const totalVehicles = ownedCars.length;
+  const approvedVehicles = ownedCars.filter((c) => c.status === "approved").length;
+  const pendingVehicles = ownedCars.filter((c) => c.status === "pending").length;
+  const totalEarnings = ownedBookings.reduce((sum, b) => sum + b.total, 0);
 
   const handleAddCar = (e) => {
     e.preventDefault();
@@ -123,7 +126,7 @@ export default function HostDashboard() {
               : "text-gray-400 hover:text-white"
           }`}
         >
-          My Fleet ({cars.length})
+          My Fleet ({ownedCars.length})
         </button>
         <button
           onClick={() => setActiveTab("bookings")}
@@ -133,7 +136,7 @@ export default function HostDashboard() {
               : "text-gray-400 hover:text-white"
           }`}
         >
-          Bookings ({bookings.length})
+          Bookings ({ownedBookings.length})
         </button>
         <button
           onClick={() => setActiveTab("add-car")}
@@ -150,7 +153,7 @@ export default function HostDashboard() {
       {/* Tab 1: Vehicles List */}
       {activeTab === "vehicles" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cars.map((car) => (
+          {ownedCars.map((car) => (
             <div
               key={car.id}
               className="bg-[#131d2e] rounded-2xl border border-gray-800 overflow-hidden flex flex-col justify-between"
@@ -219,7 +222,7 @@ export default function HostDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
-                {bookings.map((booking) => (
+                {ownedBookings.map((booking) => (
                   <tr key={booking.id} className="hover:bg-gray-800/30">
                     <td className="p-4 font-bold text-white">{booking.id}</td>
                     <td className="p-4">

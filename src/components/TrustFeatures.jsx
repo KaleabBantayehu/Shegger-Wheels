@@ -29,7 +29,7 @@ export default function TrustFeatures() {
   ];
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-gray-800">
+    <section id="why-rent" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-gray-800">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
         <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest">

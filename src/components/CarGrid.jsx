@@ -2,11 +2,12 @@
 
 import CarCard from "./CarCard";
 import { useApp } from "@/context/AppContext";
+import { isPublicCar } from "@/lib/carCatalog";
 
 export default function CarGrid() {
   const { cars } = useApp();
-  // Only render approved cars on the public marketplace
-  const approvedCars = cars.filter((car) => car.status === "approved");
+  // Use the same public-listing rule as the /cars catalogue.
+  const approvedCars = cars.filter(isPublicCar);
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 my-8">

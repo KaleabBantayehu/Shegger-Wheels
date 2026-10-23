@@ -36,7 +36,11 @@ export default function CarCard({ car }) {
           </div>
 
           {/* Favorite Heart Button */}
-          <button className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-gray-300 hover:text-red-400 transition border border-white/10">
+          <button
+            type="button"
+            aria-label={`Save ${car.make} ${car.model} to favourites`}
+            className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-gray-300 hover:text-red-400 transition border border-white/10"
+          >
             ♥
           </button>
         </div>
@@ -109,14 +113,12 @@ export default function CarCard({ car }) {
           </p>
         </div>
 
-        <button className="bg-white hover:bg-gray-200 text-black font-bold text-xs px-4 py-2 rounded-xl transition shadow-xs">
-            <Link
-                href={`/cars/${car.id}`}
-                className="bg-white hover:bg-gray-200 text-black font-bold text-xs px-4 py-2 rounded-xl transition text-center inline-block"
-                >
-                {car.tags?.includes("Instant Book") ? "Book Trip" : "Request Trip"}
-            </Link>
-        </button>
+        <Link
+          href={`/cars/${car.id}`}
+          className="bg-white hover:bg-gray-200 text-black font-bold text-xs px-4 py-2 rounded-xl transition shadow-xs text-center inline-block"
+        >
+          {car.tags?.includes("Instant Book") ? "Book Trip" : "Request Trip"}
+        </Link>
       </div>
     </div>
   );

@@ -28,13 +28,15 @@ Because this application operates without a traditional backend database, browse
 interface User {
   id: string;               // Standard UUID generated via crypto.randomUUID()[cite: 6]
   name: string;             // User's full name[cite: 6]
-  email: string;            // Unique email address used for demo sign-in[cite: 6]
+  email: string;            // Unique email address displayed for demo sign-in[cite: 6]
   phone: string;            // Contact telephone number[cite: 6]
   roles: ('renter' | 'owner' | 'admin')[]; // Array supporting coexisting roles (e.g., ['renter', 'owner'])[cite: 3, 6]
   status: 'active' | 'suspended'; // Account status controlled by admin[cite: 6, 7]
   createdAt: string;        // ISO 8601 Date-time string (YYYY-MM-DDTHH:mm:ss.sssZ)[cite: 6]
 }
 ```
+
+User records intentionally contain no password or password-hash field. Authentication is mock account selection only. A registered user starts with `roles: ['renter']`; the **Become an owner** action adds `owner` to the same array and preserves the same user ID and data.
 
 ### 2.2 Car Entity (sw_cars_v1)
 ```ts
@@ -126,6 +128,7 @@ To prevent JSON parsing failures and handle missing data safely, all application
 - `writeStorage(key, value, storageType)`: Serializes and writes data safely, returning `false` if the browser rejects the write (for example, when the storage quota is full).
 - `removeStorage(key, storageType)`: Safely removes one storage key.
 - `initializeDemoData()`: Idempotently seeds missing or malformed demo keys. It never overwrites valid existing data, so user changes survive reloads. Reviews, disputes, and announcements currently start as empty arrays because the existing data model has no demo records for them.
+- `initializeDemoData()` also removes legacy `passwordHash` properties from stored user objects in place; it does not clear users, cars, bookings, reviews, or other keys.
 - `resetDemoData()`: Removes every documented local and session key, then restores the original seed data. This includes user, car, booking, review, dispute, announcement, session, and checkout-draft keys.
 
 `STORAGE_KEYS` in `src/lib/storage.js` is the single source of truth for these key names.

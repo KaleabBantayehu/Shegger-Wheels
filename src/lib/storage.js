@@ -125,8 +125,7 @@ function hasValidStoredJson(key) {
   try {
     const raw = window.localStorage.getItem(key);
     if (raw === null) return false;
-    JSON.parse(raw);
-    return true;
+    return Array.isArray(JSON.parse(raw));
   } catch {
     return false;
   }
@@ -146,6 +145,14 @@ export function initializeDemoData() {
   for (const [key, seedValue] of DEMO_SEEDS) {
     if (!hasValidStoredJson(key)) {
       writeStorage(key, seedValue);
+    }
+  }
+
+  const users = readStorage(STORAGE_KEYS.users, []);
+  if (Array.isArray(users)) {
+    const cleanedUsers = users.map(({ passwordHash, ...user }) => user);
+    if (JSON.stringify(cleanedUsers) !== JSON.stringify(users)) {
+      writeStorage(STORAGE_KEYS.users, cleanedUsers);
     }
   }
 }
