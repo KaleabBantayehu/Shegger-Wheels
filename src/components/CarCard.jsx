@@ -35,14 +35,6 @@ export default function CarCard({ car }) {
             ))}
           </div>
 
-          {/* Favorite Heart Button */}
-          <button
-            type="button"
-            aria-label={`Save ${car.make} ${car.model} to favourites`}
-            className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-gray-300 hover:text-red-400 transition border border-white/10"
-          >
-            ♥
-          </button>
         </div>
 
         {/* Content Body */}
