@@ -48,6 +48,8 @@ export default function HostDashboard() {
     currentUser,
     createCar,
     setCarAvailability,
+    updateCar,
+    softDeleteCar,
     updateBookingStatus,
   } = useApp();
   const ownedCars = cars.filter((car) => car.ownerId === currentUser?.id);
@@ -66,6 +68,9 @@ export default function HostDashboard() {
   const [availabilityStartDate, setAvailabilityStartDate] = useState("");
   const [availabilityEndDate, setAvailabilityEndDate] = useState("");
   const [availabilityBusy, setAvailabilityBusy] = useState(false);
+  const [editingCarId, setEditingCarId] = useState("");
+  const [editCar, setEditCar] = useState(null);
+  const [vehicleBusy, setVehicleBusy] = useState(false);
 
   // Form state for adding a new car
   const [newCar, setNewCar] = useState({
@@ -134,6 +139,70 @@ export default function HostDashboard() {
       completed: "Booking marked as completed.",
     }[status];
     setActionSuccess(successMessage);
+  };
+
+  const beginEditCar = (car) => {
+    setActionError("");
+    setActionSuccess("");
+    setEditingCarId(car.id);
+    setEditCar({
+      make: car.make,
+      model: car.model,
+      edition: car.edition || "",
+      year: car.year,
+      seats: car.seats,
+      pricePerDay: car.pricePerDay,
+      neighbourhood: car.neighbourhood,
+      transmission: car.transmission,
+      photoUrl: car.photos?.[0] || "",
+      description: car.description || "",
+    });
+  };
+
+  const cancelEditCar = () => {
+    setEditingCarId("");
+    setEditCar(null);
+  };
+
+  const handleEditCar = (event) => {
+    event.preventDefault();
+    if (!editingCarId || !editCar || vehicleBusy) return;
+
+    setActionError("");
+    setActionSuccess("");
+    setVehicleBusy(true);
+    const { photoUrl, ...vehiclePatch } = editCar;
+    const result = updateCar(editingCarId, {
+      ...vehiclePatch,
+      photos: [photoUrl],
+    });
+    setVehicleBusy(false);
+
+    if (!result.ok) {
+      setActionError(result.error);
+      return;
+    }
+
+    setActionSuccess("Vehicle details updated successfully.");
+    cancelEditCar();
+  };
+
+  const handleRetireCar = (car) => {
+    if (vehicleBusy) return;
+
+    setActionError("");
+    setActionSuccess("");
+    setVehicleBusy(true);
+    const result = softDeleteCar(car.id);
+    setVehicleBusy(false);
+
+    if (!result.ok) {
+      setActionError(result.error);
+      return;
+    }
+
+    if (editingCarId === car.id) cancelEditCar();
+    setActionSuccess(`${car.make} ${car.model} was retired. Existing bookings were preserved.`);
   };
 
   const resetAvailabilityForm = () => {
@@ -314,6 +383,81 @@ export default function HostDashboard() {
             </button>
           </div>
         ) : (
+          <div className="space-y-6">
+          {editCar && (
+            <form
+              onSubmit={handleEditCar}
+              className="bg-[#131d2e] border border-emerald-500/30 rounded-2xl p-6 space-y-4 text-xs"
+            >
+              <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+                <h2 className="text-lg font-bold text-white">Edit vehicle</h2>
+                <button type="button" onClick={cancelEditCar} className="text-gray-400 hover:text-white">
+                  Close
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  ["make", "Make"],
+                  ["model", "Model"],
+                  ["edition", "Edition"],
+                  ["neighbourhood", "Neighbourhood"],
+                  ["year", "Year"],
+                  ["seats", "Seats"],
+                  ["pricePerDay", "Daily Price (ETB)"],
+                  ["photoUrl", "Image URL"],
+                ].map(([field, label]) => (
+                  <label key={field} className="text-gray-400 font-semibold">
+                    {label}
+                    <input
+                      type={["year", "seats", "pricePerDay"].includes(field) ? "number" : field === "photoUrl" ? "url" : "text"}
+                      value={editCar[field]}
+                      onChange={(event) => setEditCar({ ...editCar, [field]: event.target.value })}
+                      required={field !== "edition"}
+                      className="mt-1 w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white focus:outline-none"
+                    />
+                  </label>
+                ))}
+                <label className="text-gray-400 font-semibold">
+                  Transmission
+                  <select
+                    value={editCar.transmission}
+                    onChange={(event) => setEditCar({ ...editCar, transmission: event.target.value })}
+                    className="mt-1 w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white focus:outline-none"
+                  >
+                    <option value="automatic">Automatic</option>
+                    <option value="manual">Manual</option>
+                  </select>
+                </label>
+              </div>
+              <label className="block text-gray-400 font-semibold">
+                Description
+                <textarea
+                  rows={3}
+                  value={editCar.description}
+                  onChange={(event) => setEditCar({ ...editCar, description: event.target.value })}
+                  required
+                  className="mt-1 w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white focus:outline-none"
+                />
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={vehicleBusy}
+                  className="rounded-xl bg-emerald-500 px-4 py-3 font-bold text-white hover:bg-emerald-600 disabled:opacity-50"
+                >
+                  {vehicleBusy ? "Saving..." : "Save changes"}
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelEditCar}
+                  disabled={vehicleBusy}
+                  className="rounded-xl border border-gray-700 px-4 py-3 font-semibold text-gray-300 hover:border-gray-500 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {ownedCars.map((car) => (
             <div
@@ -336,8 +480,33 @@ export default function HostDashboard() {
                           : "bg-amber-500/20 text-amber-400 border-amber-500/30"
                       }`}
                     >
-                      {car.status === "approved" ? "Active / Approved" : "Pending Moderation"}
+                      {car.status === "approved"
+                        ? "Active / Approved"
+                        : car.status === "inactive"
+                          ? "Retired"
+                          : "Pending Moderation"}
                     </span>
+                  </div>
+
+                  <div className="flex gap-2 px-4 pb-4">
+                    <button
+                      type="button"
+                      onClick={() => beginEditCar(car)}
+                      disabled={vehicleBusy}
+                      className="flex-1 rounded-lg border border-emerald-500/40 px-3 py-2 text-[10px] font-bold text-emerald-300 hover:border-emerald-400 disabled:opacity-50"
+                    >
+                      Edit listing
+                    </button>
+                    {car.status !== "inactive" && (
+                      <button
+                        type="button"
+                        onClick={() => handleRetireCar(car)}
+                        disabled={vehicleBusy}
+                        className="flex-1 rounded-lg border border-red-500/40 px-3 py-2 text-[10px] font-bold text-red-300 hover:border-red-400 disabled:opacity-50"
+                      >
+                        Retire
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -452,6 +621,7 @@ export default function HostDashboard() {
               </div>
             </div>
             ))}
+          </div>
           </div>
         )
       )}
