@@ -4,7 +4,42 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
-import { todayIsoDate } from "@/lib/bookingRules";
+import {
+  calculateBookingDays,
+  isValidIsoDate,
+  todayIsoDate,
+} from "@/lib/bookingRules";
+
+function addUtcDays(dateString, days) {
+  const date = new Date(`${dateString}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function expandDateRange(startDate, endDate) {
+  const days = calculateBookingDays(startDate, endDate);
+  if (!days) return null;
+
+  return Array.from({ length: days }, (_, index) =>
+    addUtcDays(startDate, index),
+  );
+}
+
+function groupUnavailableDates(dates) {
+  const sortedDates = [...new Set(dates)]
+    .filter(isValidIsoDate)
+    .sort();
+
+  return sortedDates.reduce((ranges, date) => {
+    const currentRange = ranges[ranges.length - 1];
+    if (!currentRange || addUtcDays(currentRange.endDate, 1) !== date) {
+      ranges.push({ startDate: date, endDate: date });
+    } else {
+      currentRange.endDate = date;
+    }
+    return ranges;
+  }, []);
+}
 
 export default function HostDashboard() {
   const {
@@ -12,6 +47,7 @@ export default function HostDashboard() {
     bookings,
     currentUser,
     createCar,
+    setCarAvailability,
     updateBookingStatus,
   } = useApp();
   const ownedCars = cars.filter((car) => car.ownerId === currentUser?.id);
@@ -26,6 +62,10 @@ export default function HostDashboard() {
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
   const [pendingBookingAction, setPendingBookingAction] = useState("");
+  const [availabilityCarId, setAvailabilityCarId] = useState("");
+  const [availabilityStartDate, setAvailabilityStartDate] = useState("");
+  const [availabilityEndDate, setAvailabilityEndDate] = useState("");
+  const [availabilityBusy, setAvailabilityBusy] = useState(false);
 
   // Form state for adding a new car
   const [newCar, setNewCar] = useState({
@@ -94,6 +134,66 @@ export default function HostDashboard() {
       completed: "Booking marked as completed.",
     }[status];
     setActionSuccess(successMessage);
+  };
+
+  const resetAvailabilityForm = () => {
+    setAvailabilityCarId("");
+    setAvailabilityStartDate("");
+    setAvailabilityEndDate("");
+  };
+
+  const handleAddUnavailableRange = (car) => {
+    setActionError("");
+    setActionSuccess("");
+
+    if (!isValidIsoDate(availabilityStartDate) || !isValidIsoDate(availabilityEndDate)) {
+      setActionError("Enter valid pickup and return dates.");
+      return;
+    }
+
+    const dates = expandDateRange(availabilityStartDate, availabilityEndDate);
+    if (!dates) {
+      setActionError("The return date must be after the start date.");
+      return;
+    }
+
+    setAvailabilityBusy(true);
+    const result = setCarAvailability(car.id, [
+      ...(Array.isArray(car.unavailableDates) ? car.unavailableDates : []),
+      ...dates,
+    ]);
+    setAvailabilityBusy(false);
+
+    if (!result.ok) {
+      setActionError(result.error);
+      return;
+    }
+
+    setActionSuccess(`Unavailable dates added for ${car.make} ${car.model}.`);
+    resetAvailabilityForm();
+  };
+
+  const handleRemoveUnavailableRange = (car, range) => {
+    setActionError("");
+    setActionSuccess("");
+    setAvailabilityBusy(true);
+
+    const rangeDates = expandDateRange(
+      range.startDate,
+      addUtcDays(range.endDate, 1),
+    );
+    const datesToKeep = (car.unavailableDates || []).filter(
+      (date) => !rangeDates.includes(date),
+    );
+    const result = setCarAvailability(car.id, datesToKeep);
+    setAvailabilityBusy(false);
+
+    if (!result.ok) {
+      setActionError(result.error);
+      return;
+    }
+
+    setActionSuccess(`Unavailable dates removed for ${car.make} ${car.model}.`);
   };
 
   return (
@@ -251,6 +351,93 @@ export default function HostDashboard() {
                   <p className="text-xs font-extrabold text-white pt-1">
                     {car.pricePerDay.toLocaleString()} ETB / day
                   </p>
+                </div>
+
+                <div className="border-t border-gray-800 px-4 py-4 space-y-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-white">Unavailable dates</h4>
+                    <p className="mt-1 text-[10px] text-gray-500">
+                      Return date is exclusive.
+                    </p>
+                  </div>
+                  {groupUnavailableDates(car.unavailableDates || []).length === 0 ? (
+                    <p className="text-[10px] text-gray-500">No unavailable dates set.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {groupUnavailableDates(car.unavailableDates || []).map((range) => (
+                        <div
+                          key={`${car.id}-${range.startDate}-${range.endDate}`}
+                          className="flex items-center justify-between gap-2 rounded-lg bg-black/20 px-2.5 py-2 text-[10px] text-gray-300"
+                        >
+                          <span>
+                            {range.startDate} → {addUtcDays(range.endDate, 1)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveUnavailableRange(car, range)}
+                            disabled={availabilityBusy}
+                            className="font-semibold text-red-300 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {availabilityCarId === car.id ? (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="text-[10px] text-gray-400">
+                          Start date
+                          <input
+                            type="date"
+                            value={availabilityStartDate}
+                            onChange={(event) => setAvailabilityStartDate(event.target.value)}
+                            className="mt-1 w-full rounded-lg border border-gray-800 bg-gray-900 p-2 text-[10px] text-white"
+                          />
+                        </label>
+                        <label className="text-[10px] text-gray-400">
+                          Return date
+                          <input
+                            type="date"
+                            value={availabilityEndDate}
+                            onChange={(event) => setAvailabilityEndDate(event.target.value)}
+                            className="mt-1 w-full rounded-lg border border-gray-800 bg-gray-900 p-2 text-[10px] text-white"
+                          />
+                        </label>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleAddUnavailableRange(car)}
+                          disabled={availabilityBusy}
+                          className="rounded-lg bg-emerald-500 px-3 py-2 text-[10px] font-bold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {availabilityBusy ? "Saving..." : "Add unavailable range"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={resetAvailabilityForm}
+                          disabled={availabilityBusy}
+                          className="rounded-lg border border-gray-700 px-3 py-2 text-[10px] font-semibold text-gray-300 hover:border-gray-500 disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAvailabilityCarId(car.id);
+                        setActionError("");
+                        setActionSuccess("");
+                      }}
+                      className="text-[10px] font-semibold text-emerald-400 hover:text-emerald-300"
+                    >
+                      + Block dates
+                    </button>
+                  )}
                 </div>
               </div>
 
