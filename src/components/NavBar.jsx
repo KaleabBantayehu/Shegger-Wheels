@@ -20,6 +20,7 @@ export default function Navbar() {
   const router = useRouter();
   const { hydrated, currentUser, signOutUser, becomeOwner } = useApp();
   const [quickSearch, setQuickSearch] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isOwner = hasRole(currentUser, "owner");
   const isRenter = hasRole(currentUser, "renter");
@@ -33,11 +34,13 @@ export default function Navbar() {
 
   const handleQuickSearch = (event) => {
     event.preventDefault();
+    setMobileMenuOpen(false);
     const query = quickSearch.trim();
     router.push(query ? `/cars?q=${encodeURIComponent(query)}` : "/cars");
   };
 
   const handleSignOut = () => {
+    setMobileMenuOpen(false);
     signOutUser();
     // A full navigation guarantees the sign-out returns to the homepage and
     // cannot be overtaken by a protected-page guard redirect.
@@ -55,6 +58,8 @@ export default function Navbar() {
       window.alert(result.error);
     }
   };
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
     <header className="sticky top-0 z-50 w-full bg-[#0b1320] border-b border-gray-800">
@@ -138,6 +143,19 @@ export default function Navbar() {
             )}
           </nav>
 
+          <button
+            type="button"
+            className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-700 text-gray-200 hover:border-gray-500 hover:text-white"
+            aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+          >
+            <span aria-hidden="true" className="text-lg leading-none">
+              {mobileMenuOpen ? "×" : "☰"}
+            </span>
+          </button>
+
           {/* Account Area */}
           <div className="flex items-center gap-2 sm:gap-3">
             {!hydrated ? (
@@ -191,6 +209,92 @@ export default function Navbar() {
           </div>
 
         </div>
+
+        {mobileMenuOpen && (
+          <div
+            id="mobile-navigation"
+            className="md:hidden max-h-[calc(100vh-8rem)] overflow-y-auto border-t border-gray-800 py-4"
+          >
+            <form
+              onSubmit={handleQuickSearch}
+              role="search"
+              className="mb-4 flex items-center rounded-xl border border-gray-800 bg-gray-900 px-3 py-2"
+            >
+              <label htmlFor="mobile-car-search" className="sr-only">
+                Search cars by make, model, or location
+              </label>
+              <input
+                id="mobile-car-search"
+                type="search"
+                value={quickSearch}
+                onChange={(event) => setQuickSearch(event.target.value)}
+                placeholder="Search make, model, or area..."
+                className="w-full bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none"
+              />
+              <button
+                type="submit"
+                aria-label="Search cars"
+                className="ml-2 text-xs font-bold text-emerald-400"
+              >
+                Search
+              </button>
+            </form>
+
+            <nav aria-label="Mobile navigation" className="grid gap-2 text-sm font-medium text-gray-300">
+              <Link
+                href="/cars"
+                onClick={closeMobileMenu}
+                className={`${navLinkClass(pathname.startsWith("/cars"))} block`}
+              >
+                Explore Cars
+              </Link>
+              {hydrated && isOwner && (
+                <Link
+                  href="/host/dashboard"
+                  onClick={closeMobileMenu}
+                  className={`${navLinkClass(isOwnerPage)} block`}
+                >
+                  Owner Dashboard
+                </Link>
+              )}
+              {hydrated && isRenter && (
+                <Link
+                  href="/bookings"
+                  onClick={closeMobileMenu}
+                  className={`${navLinkClass(pathname.startsWith("/bookings"))} block`}
+                >
+                  My Bookings
+                </Link>
+              )}
+              {hydrated && isAdmin && (
+                <Link
+                  href="/admin/console"
+                  onClick={closeMobileMenu}
+                  className={`${navLinkClass(isAdminPage)} block`}
+                >
+                  Admin Console
+                </Link>
+              )}
+              {!hydrated ? null : currentUser ? (
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="rounded-full border border-gray-700 px-3 py-2 text-left text-xs font-semibold text-gray-300 hover:border-gray-500 hover:text-white"
+                >
+                  Sign out
+                </button>
+              ) : (
+                <Link
+                  href={signInHref}
+                  onClick={closeMobileMenu}
+                  className="rounded-full bg-emerald-500 px-3 py-2 text-center text-xs font-bold text-white hover:bg-emerald-600"
+                >
+                  Sign in
+                </Link>
+              )}
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
