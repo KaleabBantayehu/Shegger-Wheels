@@ -4,8 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default function CarCard({ car }) {
-  const rating = car.rating || 4.9;
-  const reviewsCount = car.reviewsCount || 12;
+  const rating = Number(car.rating);
+  const hasRating = Number.isFinite(rating) && rating > 0;
+  const reviewsCount = Number(car.reviewsCount) || 0;
   const mainPhoto = car.photos?.[0] || "/images/placeholder.jpg";
   const totalDays = 3;
   const totalPrice = car.pricePerDay * totalDays;
@@ -50,10 +51,20 @@ export default function CarCard({ car }) {
               </p>
             </div>
             <div className="flex items-center text-xs font-bold text-white bg-gray-800/80 px-2 py-1 rounded-md border border-gray-700 shrink-0">
-              <span className="text-amber-400 mr-1">★</span> {rating}
-              <span className="text-[10px] text-gray-400 font-normal ml-0.5">
-                ({reviewsCount})
-              </span>
+              {hasRating ? (
+                <>
+                  <span className="text-amber-400 mr-1">★</span> {rating}
+                  {reviewsCount > 0 && (
+                    <span className="text-[10px] text-gray-400 font-normal ml-0.5">
+                      ({reviewsCount})
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-gray-400 font-semibold">
+                  New listing
+                </span>
+              )}
             </div>
           </div>
 

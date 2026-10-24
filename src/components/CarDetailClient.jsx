@@ -37,6 +37,9 @@ export default function CarDetailClient({ carId, initialCar }) {
   }
 
   const days = calculateBookingDays(startDate, endDate) || 0;
+  const rating = Number(car.rating);
+  const hasRating = Number.isFinite(rating) && rating > 0;
+  const reviewsCount = Number(car.reviewsCount) || 0;
 
   const subtotal = car.pricePerDay * days;
   const serviceFee = Math.round(subtotal * 0.05);
@@ -92,7 +95,18 @@ export default function CarDetailClient({ carId, initialCar }) {
           <div className="text-right">
             <span className="text-xs text-gray-400 block">Rating & Reviews</span>
             <span className="text-sm font-bold text-white">
-              ★ {car.rating || 4.9} <span className="text-xs text-gray-400">({car.reviewsCount || 12} reviews)</span>
+              {hasRating ? (
+                <>
+                  ★ {rating}{" "}
+                  <span className="text-xs text-gray-400">
+                    {reviewsCount > 0
+                      ? `(${reviewsCount} ${reviewsCount === 1 ? "review" : "reviews"})`
+                      : "(No reviews yet)"}
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs text-gray-400">No ratings yet</span>
+              )}
             </span>
           </div>
         </div>

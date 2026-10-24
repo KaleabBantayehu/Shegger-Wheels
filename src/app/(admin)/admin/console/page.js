@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 
 export default function AdminConsole() {
-  const { cars, users, bookings, setCarStatus } = useApp();
+  const { cars, users, bookings, setCarStatus, currentUser } = useApp();
   const [activeTab, setActiveTab] = useState("moderation"); // "moderation" | "vehicles" | "users"
   const [actionError, setActionError] = useState("");
 
@@ -37,7 +37,9 @@ export default function AdminConsole() {
             <span className="bg-red-500/10 text-red-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-red-500/30">
               Admin Restricted Access
             </span>
-            <span className="text-xs text-gray-400">• Abebe Kebede</span>
+            <span className="text-xs text-gray-400">
+              • {currentUser?.name || "Administrator"}
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
             Sheggar Wheels Governance Console

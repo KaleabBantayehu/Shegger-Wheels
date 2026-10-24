@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useApp } from "@/context/AppContext";
+import { isPublicCar } from "@/lib/carCatalog";
 
 // Dynamically import map without server-side rendering
 const Map = dynamic(() => import("./Map"), {
@@ -15,25 +16,31 @@ const Map = dynamic(() => import("./Map"), {
 
 export default function LocationMapSection() {
   const { cars } = useApp();
-  const approvedCars = cars.filter((c) => c.status === "approved");
+  const publicCars = cars.filter(isPublicCar);
 
   const hubs = [
     {
       name: "Bole Sub-City",
-      count: "58 Cars",
+      matches: (car) => car.neighbourhood?.toLowerCase().includes("bole"),
       description: "Airport, Edna Mall, Atlas Hotel area. Ideal for international arrivals and diplomats.",
     },
     {
       name: "Kazanchis & Kirkos",
-      count: "34 Cars",
+      matches: (car) => car.neighbourhood?.toLowerCase().includes("kazanchis"),
       description: "UNECA, Hilton, Sheraton & Minitrue district. Executive sedans and chauffeur-ready.",
     },
     {
       name: "Piassa & Arada",
-      count: "28 Cars",
+      matches: (car) => car.neighbourhood?.toLowerCase().includes("piassa"),
       description: "Historical centre, Arat Kilo, and University district. Great economy car pricing.",
     },
-  ];
+  ].map((hub) => {
+    const count = publicCars.filter(hub.matches).length;
+    return {
+      ...hub,
+      countLabel: `${count} ${count === 1 ? "Vehicle" : "Vehicles"}`,
+    };
+  });
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -55,7 +62,7 @@ export default function LocationMapSection() {
         
         {/* Left Column: Interactive Real React-Leaflet Map */}
         <div className="lg:col-span-7 bg-[#131d2e] border border-gray-800 rounded-2xl p-3 flex flex-col justify-between relative overflow-hidden min-h-[340px]">
-          <Map cars={approvedCars} />
+          <Map cars={publicCars} />
         </div>
 
         {/* Right Column: Sub-city Cards List */}
@@ -72,7 +79,7 @@ export default function LocationMapSection() {
                 </p>
               </div>
               <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-emerald-500/30 shrink-0">
-                {hub.count}
+                {hub.countLabel}
               </span>
             </div>
           ))}

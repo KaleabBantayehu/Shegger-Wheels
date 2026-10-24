@@ -10,6 +10,11 @@ export default function HostDashboard() {
   const ownedCars = cars.filter((car) => car.ownerId === currentUser?.id);
   const ownedCarIds = new Set(ownedCars.map((car) => car.id));
   const ownedBookings = bookings.filter((booking) => ownedCarIds.has(booking.carId));
+  const firstName =
+    (currentUser?.name || "Host")
+      .replace(/\s*\([^)]*\)\s*$/, "")
+      .trim()
+      .split(/\s+/)[0] || "Host";
   const [activeTab, setActiveTab] = useState("vehicles"); // "vehicles" | "bookings" | "add-car"
   const [actionError, setActionError] = useState("");
 
@@ -70,7 +75,7 @@ export default function HostDashboard() {
             Host Management Portal
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
-            Welcome back, Tigist
+            Welcome back, {firstName}
           </h1>
           <p className="text-xs text-gray-400 mt-1">
             Manage your fleet, track earnings, and list new vehicles across Addis Ababa.
@@ -152,8 +157,26 @@ export default function HostDashboard() {
 
       {/* Tab 1: Vehicles List */}
       {activeTab === "vehicles" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {ownedCars.map((car) => (
+        ownedCars.length === 0 ? (
+          <div className="bg-[#131d2e] border border-gray-800 rounded-2xl p-8 text-center space-y-3">
+            <h2 className="text-lg font-extrabold text-white">
+              No vehicles in your fleet yet
+            </h2>
+            <p className="text-xs text-gray-400 max-w-md mx-auto">
+              List your first vehicle to start receiving booking requests. New
+              listings stay pending until an administrator approves them.
+            </p>
+            <button
+              type="button"
+              onClick={() => setActiveTab("add-car")}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition"
+            >
+              List a vehicle
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {ownedCars.map((car) => (
             <div
               key={car.id}
               className="bg-[#131d2e] rounded-2xl border border-gray-800 overflow-hidden flex flex-col justify-between"
@@ -202,12 +225,24 @@ export default function HostDashboard() {
                 <span className="text-[10px] text-gray-500">{car.transmission}</span>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       )}
 
       {/* Tab 2: Booking History */}
       {activeTab === "bookings" && (
+        ownedBookings.length === 0 ? (
+          <div className="bg-[#131d2e] border border-gray-800 rounded-2xl p-8 text-center space-y-2">
+            <h2 className="text-lg font-extrabold text-white">
+              No bookings yet
+            </h2>
+            <p className="text-xs text-gray-400 max-w-md mx-auto">
+              Bookings for your approved vehicles will appear here once renters
+              request a trip.
+            </p>
+          </div>
+        ) : (
         <div className="bg-[#131d2e] border border-gray-800 rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-gray-300">
@@ -244,6 +279,7 @@ export default function HostDashboard() {
             </table>
           </div>
         </div>
+        )
       )}
 
       {/* Tab 3: Add Vehicle Form */}

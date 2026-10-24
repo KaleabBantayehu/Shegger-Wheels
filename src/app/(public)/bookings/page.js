@@ -12,7 +12,16 @@ function BookingHistory() {
     <div className="max-w-4xl mx-auto px-4 py-10">
       <h1 className="text-3xl font-extrabold text-white">My bookings</h1>
       <div className="mt-6 space-y-3">
-        {ownBookings.length === 0 && <p className="text-sm text-gray-400">You have no bookings yet.</p>}
+        {ownBookings.length === 0 && (
+          <div className="rounded-2xl border border-gray-800 bg-[#131d2e] p-8 text-center space-y-2">
+            <h2 className="text-lg font-extrabold text-white">
+              No bookings yet
+            </h2>
+            <p className="text-xs text-gray-400 max-w-md mx-auto">
+              Trips you request from an approved vehicle will appear here.
+            </p>
+          </div>
+        )}
         {ownBookings.map((booking) => {
           const car = cars.find((candidate) => candidate.id === booking.carId);
           return (

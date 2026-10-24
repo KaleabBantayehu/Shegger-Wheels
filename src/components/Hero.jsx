@@ -1,4 +1,5 @@
 import SearchWidget from "./SearchWidget";
+import HomeStats from "./HomeStats";
 
 export default function Hero() {
   return (
@@ -24,25 +25,8 @@ export default function Hero() {
             Skip the traditional rental counter. From Land Cruisers for Rift Valley getaways to fuel-efficient Corollas and executive sedans in Bole and Kazanchis[cite: 1].
           </p>
 
-          {/* 4 Stats Cards Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-6 max-w-3xl mx-auto">
-            <div className="bg-gray-900/60 border border-gray-800 p-3 rounded-xl text-left">
-              <p className="text-emerald-400 font-extrabold text-lg">140+</p>
-              <p className="text-gray-400 text-[10px]">Verified Host Vehicles</p>
-            </div>
-            <div className="bg-gray-900/60 border border-gray-800 p-3 rounded-xl text-left">
-              <p className="text-emerald-400 font-extrabold text-lg">100%</p>
-              <p className="text-gray-400 text-[10px]">Comprehensive Insurance</p>
-            </div>
-            <div className="bg-gray-900/60 border border-gray-800 p-3 rounded-xl text-left">
-              <p className="text-emerald-400 font-extrabold text-lg">4.92 ★</p>
-              <p className="text-gray-400 text-[10px]">Average Host Rating</p>
-            </div>
-            <div className="bg-gray-900/60 border border-gray-800 p-3 rounded-xl text-left">
-              <p className="text-emerald-400 font-extrabold text-lg">Instant</p>
-              <p className="text-gray-400 text-[10px]">Instant & Host Sanction</p>
-            </div>
-          </div>
+          {/* Live Inventory Stats */}
+          <HomeStats />
 
         </div>
       </div>
