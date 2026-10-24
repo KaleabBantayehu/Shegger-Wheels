@@ -4,9 +4,16 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
+import { todayIsoDate } from "@/lib/bookingRules";
 
 export default function HostDashboard() {
-  const { cars, bookings, currentUser, createCar } = useApp();
+  const {
+    cars,
+    bookings,
+    currentUser,
+    createCar,
+    updateBookingStatus,
+  } = useApp();
   const ownedCars = cars.filter((car) => car.ownerId === currentUser?.id);
   const ownedCarIds = new Set(ownedCars.map((car) => car.id));
   const ownedBookings = bookings.filter((booking) => ownedCarIds.has(booking.carId));
@@ -17,6 +24,8 @@ export default function HostDashboard() {
       .split(/\s+/)[0] || "Host";
   const [activeTab, setActiveTab] = useState("vehicles"); // "vehicles" | "bookings" | "add-car"
   const [actionError, setActionError] = useState("");
+  const [actionSuccess, setActionSuccess] = useState("");
+  const [pendingBookingAction, setPendingBookingAction] = useState("");
 
   // Form state for adding a new car
   const [newCar, setNewCar] = useState({
@@ -65,6 +74,28 @@ export default function HostDashboard() {
     });
   };
 
+  const handleBookingAction = (bookingId, status) => {
+    if (pendingBookingAction) return;
+
+    setActionError("");
+    setActionSuccess("");
+    setPendingBookingAction(`${bookingId}:${status}`);
+    const result = updateBookingStatus(bookingId, status);
+    setPendingBookingAction("");
+
+    if (!result.ok) {
+      setActionError(result.error);
+      return;
+    }
+
+    const successMessage = {
+      confirmed: "Booking request confirmed.",
+      declined: "Booking request declined.",
+      completed: "Booking marked as completed.",
+    }[status];
+    setActionSuccess(successMessage);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
@@ -96,6 +127,14 @@ export default function HostDashboard() {
           className="bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-semibold p-3 rounded-xl"
         >
           {actionError}
+        </div>
+      )}
+      {actionSuccess && (
+        <div
+          role="status"
+          className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold p-3 rounded-xl"
+        >
+          {actionSuccess}
         </div>
       )}
 
@@ -254,6 +293,7 @@ export default function HostDashboard() {
                   <th className="p-4">Total Revenue</th>
                   <th className="p-4">Payment</th>
                   <th className="p-4">Status</th>
+                  <th className="p-4">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
@@ -273,6 +313,46 @@ export default function HostDashboard() {
                       </span>
                     </td>
                     <td className="p-4 capitalize">{booking.status}</td>
+                    <td className="p-4">
+                      {booking.status === "requested" && (
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleBookingAction(booking.id, "confirmed")}
+                            disabled={Boolean(pendingBookingAction)}
+                            className="rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[10px] font-bold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {pendingBookingAction === `${booking.id}:confirmed` ? "Saving..." : "Confirm"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleBookingAction(booking.id, "declined")}
+                            disabled={Boolean(pendingBookingAction)}
+                            className="rounded-lg border border-red-500/40 px-2.5 py-1.5 text-[10px] font-bold text-red-300 transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {pendingBookingAction === `${booking.id}:declined` ? "Saving..." : "Decline"}
+                          </button>
+                        </div>
+                      )}
+                      {booking.status === "confirmed" &&
+                        booking.endDate <= todayIsoDate() && (
+                        <button
+                          type="button"
+                          onClick={() => handleBookingAction(booking.id, "completed")}
+                          disabled={Boolean(pendingBookingAction)}
+                          className="rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[10px] font-bold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {pendingBookingAction === `${booking.id}:completed` ? "Saving..." : "Mark completed"}
+                        </button>
+                      )}
+                      {booking.status === "confirmed" &&
+                        booking.endDate > todayIsoDate() && (
+                        <span className="text-[10px] text-gray-500">Available after return date</span>
+                      )}
+                      {["declined", "cancelled", "completed"].includes(booking.status) && (
+                        <span className="text-[10px] text-gray-500">No actions available</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
