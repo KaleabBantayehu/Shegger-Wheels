@@ -1,12 +1,6 @@
-"use client";
-
-import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 
 export default function Footer() {
-  const [currency, setCurrency] = useState("ETB");
-
   return (
     <footer className="bg-[#0b1320] text-gray-400 text-xs border-t border-gray-800 pt-12 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
@@ -124,31 +118,12 @@ export default function Footer() {
               </span>
             </div>
 
-            {/* Display Currency Switcher */}
+            {/* Supported display currency */}
             <div className="pt-2">
-              <span className="text-[11px] text-gray-400 block mb-1">Display:</span>
-              <div className="inline-flex bg-gray-900 p-1 rounded-lg border border-gray-800 text-xs">
-                <button
-                  onClick={() => setCurrency("ETB")}
-                  className={`px-3 py-1 rounded font-bold transition ${
-                    currency === "ETB"
-                      ? "bg-black text-white"
-                      : "text-gray-400 hover:text-white"
-                  }`}
-                >
-                  ETB (Br)
-                </button>
-                <button
-                  onClick={() => setCurrency("USD")}
-                  className={`px-3 py-1 rounded font-bold transition ${
-                    currency === "USD"
-                      ? "bg-black text-white"
-                      : "text-gray-400 hover:text-white"
-                  }`}
-                >
-                  USD ($)
-                </button>
-              </div>
+              <span className="text-[11px] text-gray-400 block mb-1">Currency:</span>
+              <span className="inline-block bg-gray-900 px-3 py-1.5 rounded-lg border border-gray-800 text-xs font-bold text-white">
+                ETB (Br)
+              </span>
             </div>
           </div>
 
