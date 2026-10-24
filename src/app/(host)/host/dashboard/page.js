@@ -95,14 +95,20 @@ export default function HostDashboard() {
 
   const handleAddCar = (e) => {
     e.preventDefault();
+    if (vehicleBusy) return;
+    setActionError("");
+    setActionSuccess("");
+    setVehicleBusy(true);
     const result = createCar(newCar);
 
     if (!result.ok) {
       setActionError(result.error);
+      setVehicleBusy(false);
       return;
     }
 
-    setActionError("");
+    setVehicleBusy(false);
+    setActionSuccess("Vehicle submitted for approval.");
     setActiveTab("vehicles");
     setNewCar({
       make: "",
@@ -406,9 +412,11 @@ export default function HostDashboard() {
                   ["pricePerDay", "Daily Price (ETB)"],
                   ["photoUrl", "Image URL"],
                 ].map(([field, label]) => (
-                  <label key={field} className="text-gray-400 font-semibold">
+                  <label key={field} htmlFor={`edit-${field}`} className="text-gray-400 font-semibold">
                     {label}
                     <input
+                      id={`edit-${field}`}
+                      name={field}
                       type={["year", "seats", "pricePerDay"].includes(field) ? "number" : field === "photoUrl" ? "url" : "text"}
                       value={editCar[field]}
                       onChange={(event) => setEditCar({ ...editCar, [field]: event.target.value })}
@@ -417,9 +425,11 @@ export default function HostDashboard() {
                     />
                   </label>
                 ))}
-                <label className="text-gray-400 font-semibold">
+                <label htmlFor="edit-transmission" className="text-gray-400 font-semibold">
                   Transmission
                   <select
+                    id="edit-transmission"
+                    name="transmission"
                     value={editCar.transmission}
                     onChange={(event) => setEditCar({ ...editCar, transmission: event.target.value })}
                     className="mt-1 w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white focus:outline-none"
@@ -429,9 +439,11 @@ export default function HostDashboard() {
                   </select>
                 </label>
               </div>
-              <label className="block text-gray-400 font-semibold">
+              <label htmlFor="edit-description" className="block text-gray-400 font-semibold">
                 Description
                 <textarea
+                  id="edit-description"
+                  name="description"
                   rows={3}
                   value={editCar.description}
                   onChange={(event) => setEditCar({ ...editCar, description: event.target.value })}
@@ -726,11 +738,13 @@ export default function HostDashboard() {
             List a New Vehicle
           </h2>
 
-          <form onSubmit={handleAddCar} className="space-y-4 text-xs">
+          <form onSubmit={handleAddCar} aria-busy={vehicleBusy} className="space-y-4 text-xs">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-400 font-semibold mb-1">Make</label>
+                <label htmlFor="new-car-make" className="block text-gray-400 font-semibold mb-1">Make</label>
                 <input
+                  id="new-car-make"
+                  name="make"
                   type="text"
                   placeholder="e.g. Toyota"
                   value={newCar.make}
@@ -740,8 +754,10 @@ export default function HostDashboard() {
                 />
               </div>
               <div>
-                <label className="block text-gray-400 font-semibold mb-1">Model</label>
+                <label htmlFor="new-car-model" className="block text-gray-400 font-semibold mb-1">Model</label>
                 <input
+                  id="new-car-model"
+                  name="model"
                   type="text"
                   placeholder="e.g. Corolla"
                   value={newCar.model}
@@ -754,8 +770,10 @@ export default function HostDashboard() {
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-gray-400 font-semibold mb-1">Year</label>
+                <label htmlFor="new-car-year" className="block text-gray-400 font-semibold mb-1">Year</label>
                 <input
+                  id="new-car-year"
+                  name="year"
                   type="number"
                   value={newCar.year}
                   onChange={(e) => setNewCar({ ...newCar, year: e.target.value })}
@@ -764,8 +782,10 @@ export default function HostDashboard() {
                 />
               </div>
               <div>
-                <label className="block text-gray-400 font-semibold mb-1">Seats</label>
+                <label htmlFor="new-car-seats" className="block text-gray-400 font-semibold mb-1">Seats</label>
                 <input
+                  id="new-car-seats"
+                  name="seats"
                   type="number"
                   value={newCar.seats}
                   onChange={(e) => setNewCar({ ...newCar, seats: e.target.value })}
@@ -774,8 +794,10 @@ export default function HostDashboard() {
                 />
               </div>
               <div>
-                <label className="block text-gray-400 font-semibold mb-1">Daily Price (ETB)</label>
+                <label htmlFor="new-car-price" className="block text-gray-400 font-semibold mb-1">Daily Price (ETB)</label>
                 <input
+                  id="new-car-price"
+                  name="pricePerDay"
                   type="number"
                   value={newCar.pricePerDay}
                   onChange={(e) => setNewCar({ ...newCar, pricePerDay: e.target.value })}
@@ -787,8 +809,10 @@ export default function HostDashboard() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-400 font-semibold mb-1">Neighbourhood</label>
+                <label htmlFor="new-car-neighbourhood" className="block text-gray-400 font-semibold mb-1">Neighbourhood</label>
                 <select
+                  id="new-car-neighbourhood"
+                  name="neighbourhood"
                   value={newCar.neighbourhood}
                   onChange={(e) => setNewCar({ ...newCar, neighbourhood: e.target.value })}
                   className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white focus:outline-none"
@@ -802,8 +826,10 @@ export default function HostDashboard() {
                 </select>
               </div>
               <div>
-                <label className="block text-gray-400 font-semibold mb-1">Transmission</label>
+                <label htmlFor="new-car-transmission" className="block text-gray-400 font-semibold mb-1">Transmission</label>
                 <select
+                  id="new-car-transmission"
+                  name="transmission"
                   value={newCar.transmission}
                   onChange={(e) => setNewCar({ ...newCar, transmission: e.target.value })}
                   className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white focus:outline-none"
@@ -815,8 +841,10 @@ export default function HostDashboard() {
             </div>
 
             <div>
-              <label className="block text-gray-400 font-semibold mb-1">Image URL</label>
+              <label htmlFor="new-car-photo" className="block text-gray-400 font-semibold mb-1">Image URL</label>
               <input
+                id="new-car-photo"
+                name="photoUrl"
                 type="url"
                 value={newCar.photoUrl}
                 onChange={(e) => setNewCar({ ...newCar, photoUrl: e.target.value })}
@@ -826,8 +854,10 @@ export default function HostDashboard() {
             </div>
 
             <div>
-              <label className="block text-gray-400 font-semibold mb-1">Description</label>
+              <label htmlFor="new-car-description" className="block text-gray-400 font-semibold mb-1">Description</label>
               <textarea
+                id="new-car-description"
+                name="description"
                 rows={3}
                 placeholder="Describe your vehicle's features and pickup instructions..."
                 value={newCar.description}
@@ -839,9 +869,10 @@ export default function HostDashboard() {
 
             <button
               type="submit"
+              disabled={vehicleBusy}
               className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition shadow-md"
             >
-              Submit Vehicle for Approval
+              {vehicleBusy ? "Submitting…" : "Submit Vehicle for Approval"}
             </button>
           </form>
         </div>

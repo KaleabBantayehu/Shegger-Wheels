@@ -208,12 +208,14 @@ export default function CarDetailClient({ carId, initialCar }) {
                 </Link>
               </div>
             ) : (
-              <form onSubmit={handleBooking} className="space-y-4">
+              <form onSubmit={handleBooking} aria-busy={submitting} className="space-y-4">
                 {bookingError && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">{bookingError}</p>}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-gray-900 p-2.5 rounded-xl border border-gray-800">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Start Date</label>
+                    <label htmlFor="booking-start-date" className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Start Date</label>
                     <input
+                      id="booking-start-date"
+                      name="startDate"
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
@@ -222,8 +224,10 @@ export default function CarDetailClient({ carId, initialCar }) {
                     />
                   </div>
                   <div className="bg-gray-900 p-2.5 rounded-xl border border-gray-800">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">End Date</label>
+                    <label htmlFor="booking-end-date" className="text-[10px] font-bold text-gray-400 uppercase block mb-1">End Date</label>
                     <input
+                      id="booking-end-date"
+                      name="endDate"
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
@@ -250,6 +254,7 @@ export default function CarDetailClient({ carId, initialCar }) {
 
                 <button
                   type="submit"
+                  disabled={submitting}
                   className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition text-xs"
                 >
                   {submitting ? "Submitting…" : currentUser ? "Confirm & Request Trip" : "Sign in to request this trip"}
